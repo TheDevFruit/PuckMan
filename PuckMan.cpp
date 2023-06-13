@@ -1,6 +1,6 @@
 ﻿#include "Python.h"
 #include "Movements.h"
-#include "thread"
+//#include "thread"
 
 
 #pragma region Maps
@@ -180,7 +180,7 @@ void Game_Play() {
             Game_Win();
             break;
         }
-        else if (game.objects.first[token.id].collected == 50 and events.fruits_spawned != ZeroWave)  events.EvSpawnFruit();
+        else if (game.objects.first[token.id].collected == 50 and events.fruits_spawned == ZeroWave)  events.EvSpawnFruit();
         else if (panic_timer <= 0) {
             events.EvUnPanic();
             panic_timer = game.speed * 10;

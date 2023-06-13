@@ -202,8 +202,8 @@ Modals modals;
 
 void ModalsInit() {
     modals.field_pos.x = 4;
-    modals.field_pos.y = 4;
-    modals.game_active_pos.y = modals.field_pos.y - 2;
+    modals.field_pos.y = 5;
+    modals.game_active_pos.y = modals.field_pos.y - 4;
     modals.show_params_pos.x = modals.field_pos.x + 0 + (game.x * 2) + 3;
     modals.show_params_pos.y = modals.field_pos.y;
     modals.show_pos_pos.x = modals.field_pos.x + (game.x * 2) + 3;
@@ -422,40 +422,62 @@ void Field_GameActive() {
     string text = "Game Playing";
     if (events.pause) text = "Game Paused";
     else if (!player.active) text = "Heh, and where";
+
     modals.game_active_pos.x = modals.field_pos.x + game.x - (size(text) / 2);
     modal.CreateModal(text, 1, 1, false, "LIGHT RED");
-    SetConsoleCursorPosition(hand, { short(0), short(2) });
-    for (int i = 0; i < modals.field_pos.x + game.x * 2; i++)
-    {
-        cout << ' ';
-    }
+
+    SetConsoleCursorPosition(hand, { short(0), short(modals.game_active_pos.y) });
+    for (int i = 0; i < modals.field_pos.x + game.x * 2; i++) cout << ' ';
+
     modal.OutContent(modals.game_active_pos.y, modals.game_active_pos.x);
+
+
+    SetConsoleCursorPosition(hand, { short(modals.field_pos.x + 2), short(modals.field_pos.y - 2) });
+    ForePrint("Score: " + Str(Round(game.score)), "LIGHT YELLOW");
+
+
+    text = "";
+    for (auto& i : Range(0, fruit.collected)) text += fruit.icon + " ";
+    SetConsoleCursorPosition(hand, { short(game.x - 2), short(modals.game_active_pos.y - 2) });
+    ForePrint(text, fruit.color);
 }
 
 void Field_Show_Pos() {
-    Modal modal;
-    string point = Str((char)249);
-    modal.CreateModal("\nPosition (x | y):\n", 1, 1, false, "LIGHT RED");
-    modal.SetFrameColor("LIGHT RED");
-    modal.In(point + " Player Pos: " + Str(player.pos.x) + " | " + Str(player.pos.y) + "\n");
-    modal.In(point + " Crims Pos: " + Str(crims.pos.x) + " | " + Str(crims.pos.y) + "\n");
-    modal.In(point + " Phantom Pos: " + Str(phantom.pos.x) + " | " + Str(phantom.pos.y) + "\n");
+    if (setups.show_pos)
+    {
+        Modal modal;
+        string point = Str((char)249);
+        modal.CreateModal("\nPosition (x | y):\n", 1, 1, false, "LIGHT RED");
+        modal.SetFrameColor("LIGHT RED");
+        modal.In(point + " Player Pos: " + Str(player.pos.x) + " | " + Str(player.pos.y) + "\n");
+        modal.In(point + " Crims Pos: " + Str(crims.pos.x) + " | " + Str(crims.pos.y) + "\n");
+        modal.In(point + " Phantom Pos: " + Str(phantom.pos.x) + " | " + Str(phantom.pos.y) + "\n");
 
-    if (setups.show_pos)  modal.Out(modals.show_pos_pos.y, modals.show_pos_pos.x);
+        modal.Out(modals.show_pos_pos.y, modals.show_pos_pos.x);
+    }
 }
 
 void Field_Show_Params() {
-    Modal modal;
-    string point = Str((char)249);
-    modal.CreateModal("\nParametrs:   \n", 1, 1, false, "LIGHT RED");
-    modal.In(point + " Game Time: " + Str(game.timer) + "\n");
-    modal.In(point + " Tokens: " + Str(game.objects.first[token.id].collected) + "\n");
-    modal.In(point + " Tokens: " + Str(game.objects.first[fruit.id].collected) + "\n");
-    modal.In(point + " Player Speed: " + Str(player.speed) + "\n");
-    modal.In(point + " Crims Speed : " + Str(crims.speed) + "\n");
-    modal.In(point + " Phantom Speed: " + Str(phantom.speed) + "\n");
+    if (setups.show_params)
+    {
+        Modal modal;
+        string point = Str((char)249);
+        modal.CreateModal("\nParametrs:   \n", 1, 1, false, "LIGHT RED");
+        modal.In(point + " Game Time: " + Str(game.timer) + "\n");
+        modal.In(point + " Tokens: " + Str(game.objects.first[token.id].collected) + "\n");
+        modal.In(point + " Tokens: " + Str(game.objects.first[fruit.id].collected) + "\n");
+        modal.In(point + " Player Speed: " + Str(player.speed) + "\n");
+        modal.In(point + " Crims Speed : " + Str(crims.speed) + "\n");
+        modal.In(point + " Phantom Speed: " + Str(phantom.speed) + "\n");
 
-    if (setups.show_params)  modal.Out(modals.show_params_pos.y, modals.show_params_pos.x);
+        modal.Out(modals.show_params_pos.y, modals.show_params_pos.x);
+    }
+}
+
+void FieldUpdate() {
+    Field_Show_Pos();
+    Field_Show_Params();
+    Field_GameActive();
 }
 
 void Field_Out(int pick_x, int pick_y) {
@@ -1010,12 +1032,13 @@ void CommandTab(string command) {
             if (vec[1] == "pos")
             {
                 setups.show_pos = param;
+                Field_Show_Pos();
             }
             else if (vec[1] == "params")
             {
                 setups.show_params = param;
+                Field_Show_Params();
             }
-            Field_Out();
         }
         else if (vec[0] == "mod")
         {
@@ -1138,13 +1161,15 @@ void CommandTab(string command) {
 }
 
 void CommandInput() {
-    string command; ForePrint("\nEnter Command: ", "LIGHT RED");
+    SetConsoleCursorPosition(hand, { short(modals.field_pos.x), short(modals.field_pos.y + game.y + 3) });
+    string command; ForePrint("Enter Command: ", "LIGHT RED");
     while (true)
     {
         if (_kbhit())
         {
+            SetConsoleCursorPosition(hand, { short(modals.field_pos.x + size("Enter Command: ")), short(modals.field_pos.y + game.y + 3)});
             char button = _getch();
-            int but_num = button;
+            int but_num = button;   
             if (but_num == 13)
             {
                 if (command.find('=') <= 100)
@@ -1174,17 +1199,16 @@ void CommandInput() {
             {
                 command += button;
             }
+            ForePrint(command, "LIGHT RED");
 
-            Field_Out();
-            ForePrint("\nEnter Command: " + command, "LIGHT RED");
             vector<string> maybe = Find(game.commands, command);
             if (size(maybe) != 0)
             {
                 Fore("GRAY"); cout << "  ~" << maybe[0] << endl;
                 for (int i = 1; i < size(maybe); i++)
                 {
-                    Fore(); cout << "Enter Command: " << command;
-                    Fore("GRAY"); cout << "  ~" << maybe[i] << endl;
+                    SetConsoleCursorPosition(hand, { short(modals.field_pos.x + size("Enter Command: ") + size(command)), short(modals.field_pos.y + game.y + 2 + i) });
+                    Fore("GRAY"); cout << "  ~" << maybe[i];
                     if (i == 4) { break; }
                 }
             }
@@ -1310,7 +1334,7 @@ private:
     void CrimsCursoreMove(Pos point_pos, Object point) {
         ForeEdit(crims.point.icon, Occurate(crims.pos), crims.point.color, crims.point.back_color);
         ForeEdit(crims.icon, Occurate(point_pos), crims.color, point.back_color);
-        Field_Show_Pos();
+        FieldUpdate();
     }
 };
 CrimsMove crims_move;
@@ -1450,7 +1474,7 @@ private:
     void PhantomCursoreMove(Pos point_pos, Object point) {
         ForeEdit(phantom.point.icon, Occurate(phantom.pos), phantom.point.color, phantom.point.back_color);
         ForeEdit(phantom.icon, Occurate(point_pos), phantom.color, point.back_color);
-        Field_Show_Pos();
+        FieldUpdate();
     }
 };
 PhantomMove phantom_move;
@@ -1485,9 +1509,11 @@ public:
             if (!phantom.die) if (PosConside(phantom.pos, player.pos) and events.mode == Panic and !phantom.die)  phantom_move.Die();
             game.movfield[player.pos.y][player.pos.x] = player;
         }
+
         switch (dir)
         {
         case ' ':
+            Field_GameActive();
             events.pause = !events.pause;
             break;
 
@@ -1528,6 +1554,7 @@ private:
     void Collect(Object& point) {
         point.collected += 1;
         UpdateFieldObject(point);
+        game.objects.first[token.id].collected = 50;
         game.score += point.cost * game.tick + point.cost;
         if (point.id == tabl.id) { events.EvPanic(); sounds.Tabl(); }
         else if (point.id == fruit.id) { events.EvPanic(); sounds.Fruit(); }
@@ -1543,7 +1570,7 @@ private:
         if (player.point.collectable) ForeEdit(plate.icon, Occurate(player.pos), plate.color, plate.back_color);
         else ForeEdit(player.point.icon, Occurate(player.pos), player.point.color, player.point.back_color);
         ForeEdit(player.icon, Occurate(point_pos), player.color, player.back_color);
-        Field_Show_Pos();
+        FieldUpdate();
     }
 };
 PlayerMove player_move;

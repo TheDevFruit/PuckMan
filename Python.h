@@ -58,7 +58,7 @@ void SetBooferWindow(int Width, int Height)
 void SetShowCursor(bool param) {
 	CONSOLE_CURSOR_INFO cursorInfo;
 	GetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
-	cursorInfo.bVisible = false;
+	cursorInfo.bVisible = param;
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
 }
 
