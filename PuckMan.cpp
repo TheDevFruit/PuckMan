@@ -128,17 +128,16 @@ void LightField_Comporator() {
 
 
 void Game_Win() {
-    Fore("LIGHT RED");
-    cout << endl << "You Win!" << endl;
-    Fore();
+    Field_GameActive();
     game.timer = 0;
+    Sleep(100000000000);
 }
 
 void Game_Lose() {
-    Fore("LIGHT RED");
-    cout << endl << "You Lose!" << endl;
-    Fore();
+    player.die = true;
+    Field_GameActive();
     game.timer = 0;
+    Sleep(100000000000);
 }
 
 void Game_Play() {

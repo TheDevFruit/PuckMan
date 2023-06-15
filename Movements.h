@@ -12,6 +12,7 @@ int Occur_y(int y) {
     return y + 1;
 }
 
+
 #pragma region Initialization
 
 enum Dirs {
@@ -238,6 +239,10 @@ void BaseMovableObjectInit() {
 
 Object ObjFindName(string name);
 
+vector<int> FPos(int a, int b) { //y, x
+    return { a + 1 + modals.field_pos.y, b * 2 + 1 + modals.field_pos.x };
+}
+
 class Events {
 public:
     int mode = Pursuit;
@@ -274,6 +279,7 @@ public:
         for (int i = 0; i < size(game.fruit_pos); i++)
         {
             game.field[game.fruit_pos[i][1]][game.fruit_pos[i][0]] = fruit;
+            ForeEdit(fruit.icon, FPos(game.fruit_pos[i][1], game.fruit_pos[i][0]), fruit.color, fruit.back_color);
         }
         fruits_spawned += 1;
     }
@@ -414,20 +420,26 @@ Sounds sounds;
 
 #pragma endregion
 
+vector<int> Occurate(Pos pos) {
+    return { pos.y + 1 + modals.field_pos.y, pos.x * 2 + 1 + modals.field_pos.x };
+}
+
 
 
 
 void Field_GameActive() {
     Modal modal;
     string text = "Game Playing";
-    if (events.pause) text = "Game Paused";
+    if (game.score >= 15000) text = "Game Win!";
+    else if (player.die) text = "Game Lose!";
+    else if (events.pause) text = "Game Paused";
     else if (!player.active) text = "Heh, and where";
 
     modals.game_active_pos.x = modals.field_pos.x + game.x - (size(text) / 2);
     modal.CreateModal(text, 1, 1, false, "LIGHT RED");
 
     SetConsoleCursorPosition(hand, { short(0), short(modals.game_active_pos.y) });
-    for (int i = 0; i < modals.field_pos.x + game.x * 2; i++) cout << ' ';
+    for (int i = 0; i < modals.field_pos.x + game.x * 2; i++) cerr << ' ';
 
     modal.OutContent(modals.game_active_pos.y, modals.game_active_pos.x);
 
@@ -507,7 +519,7 @@ void Field_Out(int pick_x, int pick_y) {
             }
             else { Fore(game.field[i][j].color, game.field[i][j].back_color); }
 
-            cout << game.field[i][j].icon;
+            cerr << game.field[i][j].icon;
 
             //Space Out
             if (j < game.x) {
@@ -533,20 +545,22 @@ void Field_Out(int pick_x, int pick_y) {
                     Fore("BLACK", phantwall.back_color);
                 }
                 else { Fore(); }
-                cout << ' ';
+                cerr << ' ';
             }
         }
         ForePrint("\n", "BLACK", "BLACK");
     }
 
-
+    ForeEdit(player.icon, Occurate(player.pos), player.color, player.back_color);
+    ForeEdit(phantom.icon, Occurate(phantom.pos), phantom.color, phantom.back_color);
+    ForeEdit(crims.icon, Occurate(crims.pos), crims.color, crims.back_color);
     //ForePrint("\nScore: " + Str(Round(game.score)), "LIGHT YELLOW");
     //ForePrint("     ");
     //for (auto& i : Range(0, fruit.collected))
     //{
     //    ForePrint(Str(fruit.icon) + " ", fruit.color);
     //}
-    //Fore(); cout << endl;
+    //Fore(); cerr << endl;
 
     if (events.pause)
     {
@@ -560,27 +574,29 @@ void Field_Out(int pick_x, int pick_y) {
     Field_Show_Params();
 }
 
-void Field_eOut(int pick_x, int pick_y) {
+
+
+void OldOut(int pick_x, int pick_y) {
     system("cls");
 
     if (events.pause)
     {
         Fore("LIGHT RED");
-        cout << "  ";
+        cerr << "  ";
         for (int i = 0; i < game.x + 1; i++)
         {
-            cout << i % 10 << " ";
+            cerr << i % 10 << " ";
         }
-        cout << endl;
+        cerr << endl;
     }
     else
     {
         Fore();
         for (int i = 0; i < game.x + 1; i++)
         {
-            cout << "  ";
+            cerr << "  ";
         }
-        cout << endl;
+        cerr << endl;
     }
 
     for (int i = 0; i < game.y + 1; i++)
@@ -588,7 +604,7 @@ void Field_eOut(int pick_x, int pick_y) {
         if (events.pause)
         {
             Fore("LIGHT RED");
-            cout << i % 10 << " ";
+            cerr << i % 10 << " ";
         }
         else
         {
@@ -613,7 +629,7 @@ void Field_eOut(int pick_x, int pick_y) {
                 }
                 else { Fore(game.field[i][j].color, game.field[i][j].back_color); }
 
-                cout << game.field[i][j].icon;
+                cerr << game.field[i][j].icon;
             }
             else
             {
@@ -645,7 +661,7 @@ void Field_eOut(int pick_x, int pick_y) {
                     Fore("BLACK", phantwall.back_color);
                 }
                 else { Fore(); }
-                cout << " ";
+                cerr << " ";
             }
         }
         ForePrint("\n", "BLACK", "BLACK");
@@ -658,7 +674,7 @@ void Field_eOut(int pick_x, int pick_y) {
     {
         ForePrint(Str(fruit.icon) + " ", fruit.color);
     }
-    Fore(); cout << endl;
+    Fore(); cerr << endl;
 
     if (events.pause)
     {
@@ -788,10 +804,6 @@ void UpdateFieldObject(Object obj) {
         }
     }
     game.objects.first[obj.id] = obj;
-}
-
-vector<int> Occurate(Pos pos) {
-    return { pos.y + 1 + modals.field_pos.y, pos.x * 2 + 1 + modals.field_pos.x };
 }
 
 
@@ -1154,7 +1166,7 @@ void CommandTab(string command) {
                 }
 
                 CommandGenerate();
-                Field_Out();
+                
             }
         }
     }
@@ -1163,6 +1175,7 @@ void CommandTab(string command) {
 void CommandInput() {
     SetConsoleCursorPosition(hand, { short(modals.field_pos.x), short(modals.field_pos.y + game.y + 3) });
     string command; ForePrint("Enter Command: ", "LIGHT RED");
+    vector<string> maybe = { "" };
     while (true)
     {
         if (_kbhit())
@@ -1171,14 +1184,14 @@ void CommandInput() {
             char button = _getch();
             int but_num = button;   
             if (but_num == 13)
-            {
+            { 
                 if (command.find('=') <= 100)
                 {
                     break;
                 }
                 else
                 {
-                    vector<string> maybe = Find(game.commands, command);
+                    maybe = Find(game.commands, command);
                     if (size(maybe) != 0)
                     {
                         string mb_command = "";
@@ -1191,9 +1204,9 @@ void CommandInput() {
                     }
                 }
             }
-            else if (button == '\b' and size(command) != 0)
+            else if (button == '\b')
             {
-                command.pop_back();
+                if (size(command) != 0) command.pop_back();
             }
             else
             {
@@ -1201,19 +1214,20 @@ void CommandInput() {
             }
             ForePrint(command, "LIGHT RED");
 
-            vector<string> maybe = Find(game.commands, command);
-            if (size(maybe) != 0)
+            SetConsoleCursorPosition(hand, { short(modals.field_pos.x + size("Enter Command: ") + size(command)), short(modals.field_pos.y + game.y + 3) });
+            for (int i = 0; i < size(maybe[0]) + 4; i++) cerr << ' ';
+
+            SetConsoleCursorPosition(hand, { short(modals.field_pos.x + size("Enter Command: ") + size(command)), short(modals.field_pos.y + game.y + 3) });
+            vector<string> mmaybe = Find(game.commands, command);
+            if (size(mmaybe) != 0) Fore("GRAY"); 
             {
-                Fore("GRAY"); cout << "  ~" << maybe[0] << endl;
-                for (int i = 1; i < size(maybe); i++)
-                {
-                    SetConsoleCursorPosition(hand, { short(modals.field_pos.x + size("Enter Command: ") + size(command)), short(modals.field_pos.y + game.y + 2 + i) });
-                    Fore("GRAY"); cout << "  ~" << maybe[i];
-                    if (i == 4) { break; }
-                }
+                maybe = mmaybe;
+                cerr << "  ~" << maybe[0] << endl;
             }
         }
     }
+    SetConsoleCursorPosition(hand, { short(modals.field_pos.x), short(modals.field_pos.y + game.y + 3) });
+    for (int i = 0; i < size(maybe[0]) + size("Enter Command: ") + size(command) + 4; i++) cerr << ' ';
     CommandTab(command);
 }
 
@@ -1488,22 +1502,10 @@ public:
 
             int num = dir;
             if (num == 224) {}
-            else if (num == 119 or num == 72 or num == -26 or num == 87)
-            {
-                Go(Up);
-            }
-            else if (num == 97 or num == 75 or num == -28 or num == 65)
-            {
-                Go(Left);
-            }
-            else if (num == 115 or num == 80 or num == -21 or num == 83)
-            {
-                Go(Down);
-            }
-            else if (num == 100 or num == 77 or num == -94 or num == 68)
-            {
-                Go(Right);
-            }
+            else if (num == 119 or num == 72 or num == -26 or num == 87) Go(Up);
+            else if (num == 97 or num == 75 or num == -28 or num == 65) Go(Left);
+            else if (num == 115 or num == 80 or num == -21 or num == 83) Go(Down);
+            else if (num == 100 or num == 77 or num == -94 or num == 68) Go(Right);
 
             if (!crims.die) if (PosConside(crims.pos, player.pos) and events.mode == Panic and !crims.die)  crims_move.Die();
             if (!phantom.die) if (PosConside(phantom.pos, player.pos) and events.mode == Panic and !phantom.die)  phantom_move.Die();
@@ -1513,8 +1515,8 @@ public:
         switch (dir)
         {
         case ' ':
-            Field_GameActive();
             events.pause = !events.pause;
+            Field_GameActive();
             break;
 
         case 'e':
@@ -1554,7 +1556,7 @@ private:
     void Collect(Object& point) {
         point.collected += 1;
         UpdateFieldObject(point);
-        game.objects.first[token.id].collected = 50;
+        game.objects.first[token.id].collected += 1;
         game.score += point.cost * game.tick + point.cost;
         if (point.id == tabl.id) { events.EvPanic(); sounds.Tabl(); }
         else if (point.id == fruit.id) { events.EvPanic(); sounds.Fruit(); }

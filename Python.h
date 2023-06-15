@@ -172,7 +172,7 @@ void Fore(string color = "BLACK", string background = "BLACK") {
 	SetConsoleTextAttribute(handle, brush);
 
 	base_color = brush;
-	cout << "";
+	cerr << "";
 }
 
 void ForePrint(string text, string color = "BLACK", string background = "BLACK") {
@@ -180,7 +180,7 @@ void ForePrint(string text, string color = "BLACK", string background = "BLACK")
 	int brush = (16 * colors[background]) + colors[color];
 
 	SetConsoleTextAttribute(handle, brush);
-	cout << text;
+	cerr << text;
 	SetConsoleTextAttribute(handle, base_color);
 }
 
@@ -194,7 +194,7 @@ void ForeEdit(char obj, vector<int> vec, string color = "BLACK", string backgrou
 void Edit(char obj, vector<int> vec) {
 	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleCursorPosition(handle, { short(vec[1]), short(vec[0]) });
-	cout << obj;
+	cerr << obj;
 }
 
 
@@ -252,7 +252,7 @@ int Round(double num) {
 }
 
 string Input(string text) {
-	string a; cout << text << " ";  getline(cin, a);
+	string a; cerr << text << " ";  getline(cin, a);
 	return a;
 }
 
@@ -540,7 +540,7 @@ public:
 			SetConsoleCursorPosition(handle, { short(in_x), short(in_y + k) });
 			ForePrint(content[k], color, back_color);
 		}
-		cout << endl;
+		cerr << endl;
 	}
 	void In(string text) {
 		vector<string> vec = Split(text, "\n");
