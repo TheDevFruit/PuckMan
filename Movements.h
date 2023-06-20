@@ -3,14 +3,8 @@
 #include <algorithm>
 using namespace std;
 void Field_Out(int pick_x = 1000, int pick_y = 1000);
-void Light_Generate();
-
-int Occur_x(int x) {
-    return x * 2 + 2;
-}
-int Occur_y(int y) {
-    return y + 1;
-}
+void FieldUpdate();
+//void Light_Generate();
 
 
 #pragma region Initialization
@@ -41,6 +35,10 @@ enum VirusRules {
     UpperId = 2,
     All = 3
 };
+enum Line {
+    X = 1,
+    Y = 0
+};
 
 class Pos {
 public:
@@ -69,6 +67,7 @@ public:
     bool light_source = false;
     int light_power = 0;
 
+    int wall = 0;
     bool pl_avalb = false;
     bool cr_avalb = false;
     bool ph_avalb = false;
@@ -91,6 +90,7 @@ public:
         light_power = light_powers[iname];
 
         pl_avalb = pl_avalbs[iname];
+        wall = walls[iname];
         cr_avalb = cr_avalbs[iname];
         ph_avalb = ph_avalbs[iname];
     }
@@ -110,6 +110,7 @@ private:
     map<string, bool> light_sources{ {"plate", false},   {"token", false}, {"fruit", false}, {"tabl", false}, {"bush", false}, {"phantwall", false}, {"wall", false}, {"torch", true} };
     map<string, int> light_powers{ {"plate", 0},       {"token", 0},     {"fruit", 0},     {"tabl", 0},     {"bush", 0},  {"phantwall", 0},   {"wall", 0},   {"torch", 5} };
 
+    map<string, int> walls{ {"plate", 3}, {"token", 0}, {"fruit", 0}, {"tabl", 0}, {"bush", 4}, {"phantwall", 1}, {"wall", 2}, {"torch", 0} };
     map<string, bool> pl_avalbs{ {"plate", true}, {"token", true}, {"fruit", true}, {"tabl", true}, {"bush", true}, {"phantwall", false}, {"wall", false}, {"torch", false} };
     map<string, bool> cr_avalbs{ {"plate", true}, {"token", true}, {"fruit", true}, {"tabl", true}, {"bush", true}, {"phantwall", true}, {"wall", false}, {"torch", false} };
     map<string, bool> ph_avalbs{ {"plate", true}, {"token", true}, {"fruit", true}, {"tabl", true}, {"bush", true}, {"phantwall", true}, {"wall", true}, {"torch", false} };
@@ -188,6 +189,14 @@ public:
     double timer = 0;
     double tick = 0;
     double score = 0;
+
+    class Command {
+    public:
+        string paint_line = "";
+        int paint_pick_y = 0;
+        int paint_pick_x = 0;
+    };
+    Command command;
 };
 Game game;
 
@@ -335,7 +344,7 @@ public:
                     }
                 }
             }
-            Light_Generate();
+            //Light_Generate();
         }
     }
 
@@ -343,7 +352,7 @@ public:
         if (night)
         {
             night = false;
-            Light_Generate();
+            //Light_Generate();
             Field_Out();
         }
     }
@@ -420,8 +429,22 @@ Sounds sounds;
 
 #pragma endregion
 
+void SpaceOut(int x, int y, bool pause = false);
+
+vector<int> OccurPos(vector<int> pos) {
+    return { pos[0] + 1 + modals.field_pos.y, pos[1] * 2 + 1 + modals.field_pos.x };
+}
+
 vector<int> Occurate(Pos pos) {
     return { pos.y + 1 + modals.field_pos.y, pos.x * 2 + 1 + modals.field_pos.x };
+}
+
+// Object Fore Edit
+void OFE(Object obj, vector<int> vec, bool paint = false) { // y, x
+    vec = OccurPos(vec);
+    SetConsoleCursorPosition(hand, { short(vec[X]), short(vec[Y]) });
+    if (!paint)  ForePrint(obj.icon, obj.color, obj.back_color);
+    else ForePrint(obj.icon, obj.color, "LIGHT RED");
 }
 
 
@@ -492,7 +515,7 @@ void FieldUpdate() {
     Field_GameActive();
 }
 
-void Field_Out(int pick_x, int pick_y) {
+void Field_Out(int pick_y, int pick_x) {
     Field_GameActive();
     Modal field;
     string text;
@@ -506,46 +529,16 @@ void Field_Out(int pick_x, int pick_y) {
     for (int i = 0; i < game.y + 1; i++) {
         SetConsoleCursorPosition(hand, { short(1 + modals.field_pos.x), short(1 + modals.field_pos.y + i) });
         for (int j = 0; j < game.x + 1; j++) {
-            if (events.pause) {
-                Fore(game.field[i][j].color);
-                if (pick_x == j and pick_y == i)
-                {
-                    Fore(game.field[i][j].color, "LIGHT RED");
-                }
-                else if (pick_x == j or pick_y == i)
-                {
-                    Fore(game.field[i][j].color, "LIGHT GREEN");
-                }
+            if (events.pause and ((j == pick_x and pick_y == 1000) or (j == 1000 and i == pick_y) or (i == pick_y and j == pick_x)))
+            {
+                Fore(game.field[i][j].color, "LIGHT RED");
+                cerr << game.field[i][j].icon;
+                SpaceOut(j, i, pick_y != 1000);
             }
-            else { Fore(game.field[i][j].color, game.field[i][j].back_color); }
-
-            cerr << game.field[i][j].icon;
-
-            //Space Out
-            if (j < game.x) {
-                bool wall_isphantom = game.field[i][j].id == phantwall.id;
-                bool wall_iswall = game.field[i][j].id == wall.id;
-                bool right_wall_isphantom = game.field[i][j + 1].id == phantwall.id;
-                bool right_wall_iswall = game.field[i][j + 1].id == wall.id;
-
-                if (events.pause)
-                {
-                    Fore();
-                }
-                else if ((wall_iswall and right_wall_isphantom) or (wall_isphantom and right_wall_iswall))
-                {
-                    Fore("BLACK", wall.back_color);
-                }
-                else if (wall_iswall and right_wall_iswall)
-                {
-                    Fore("BLACK", wall.back_color);
-                }
-                else if (wall_isphantom and right_wall_isphantom)
-                {
-                    Fore("BLACK", phantwall.back_color);
-                }
-                else { Fore(); }
-                cerr << ' ';
+            else {
+                Fore(game.field[i][j].color, game.field[i][j].back_color);
+                cerr << game.field[i][j].icon;
+                SpaceOut(j, i);
             }
         }
         ForePrint("\n", "BLACK", "BLACK");
@@ -554,24 +547,57 @@ void Field_Out(int pick_x, int pick_y) {
     ForeEdit(player.icon, Occurate(player.pos), player.color, player.back_color);
     ForeEdit(phantom.icon, Occurate(phantom.pos), phantom.color, phantom.back_color);
     ForeEdit(crims.icon, Occurate(crims.pos), crims.color, crims.back_color);
-    //ForePrint("\nScore: " + Str(Round(game.score)), "LIGHT YELLOW");
-    //ForePrint("     ");
-    //for (auto& i : Range(0, fruit.collected))
-    //{
-    //    ForePrint(Str(fruit.icon) + " ", fruit.color);
-    //}
-    //Fore(); cerr << endl;
 
-    if (events.pause)
-    {
-        ForePrint("\nGame Paused\n", "LIGHT RED");
+    FieldUpdate();
+}
+
+void ClearPaint() {
+    int pick_x = game.command.paint_pick_x;
+    int pick_y = game.command.paint_pick_y;
+    if (game.command.paint_line == "") {}
+    else if (game.command.paint_line == "x") {
+        for (int i = 0; i < game.y + 1; i++) {
+            Object spawned = game.field[i][pick_x];
+            OFE(spawned, { i, pick_x });
+        }
     }
-    else if (!player.active)
-    {
-        ForePrint("\nHeh, and where\n", "LIGHT RED");
+    else if (game.command.paint_line == "y") {
+        for (int i = 0; i < game.x + 1; i++) {
+            Object spawned = game.field[pick_y][i];
+            OFE(spawned, { pick_y, i });
+            SpaceOut(pick_y, i);
+        }
     }
-    Field_Show_Pos();
-    Field_Show_Params();
+    else if (game.command.paint_line == "point") {
+        Object spawned = game.field[pick_y][pick_x];
+        OFE(spawned, { pick_y, pick_x });
+    }
+}
+
+void SpaceOut(int x, int y, bool pause) {
+    if (x < game.x) {
+        Object obj = game.field[y][x];
+        Object obj2 = game.field[y][x+1];
+
+        if (obj.wall == 0 or obj2.wall == 0)
+        {
+            if (pause) ForePrint(" ", "BLACK", "LIGHT RED");
+            else ForePrint(" ");
+        }
+        else
+        {
+            if (obj.wall >= obj2.wall)
+            {
+                if (pause) ForePrint(obj.icon, obj.color, "LIGHT RED");
+                else ForePrint(obj.icon, obj.color, obj.back_color);
+            }
+            else if (obj.wall <= obj2.wall)
+            {
+                if (pause) ForePrint(obj2.icon, obj2.color, "LIGHT RED");
+                else ForePrint(obj2.icon, obj2.color, obj2.back_color);
+            }
+        }
+    }
 }
 
 
@@ -688,7 +714,7 @@ void OldOut(int pick_x, int pick_y) {
     if (setups.show_params)  Field_Show_Params();
 }
 
-void Light_Generate() {
+/*void Light_Generate() {
     if (events.night)
     {
         for (int y = 0; y < game.y + 1; y++) for (int x = 0; x < game.x + 1; x++) {
@@ -711,7 +737,7 @@ void Light_Generate() {
             else ForeEdit(' ', { Occur_y(y), Occur_x(x) });
         }
     }
-}
+}*/
 
 void Infection() {
     for (int i = 0; i < game.y; i++)
@@ -856,28 +882,41 @@ void CommandTab(string command) {
 
     if (size(vec[size(vec) - 1]) != 0)
     {
+        ClearPaint();
+
         if (vec[0] == "spawn")
         {
             vector<string> params = Split(vec[size(vec) - 1], ",");
-            if (size(params) == 1) { params.push_back("1000"); }
+            if (vec[2] == "x") { params.push_back("1000"); }
+            if (vec[2] == "y") { 
+                params.push_back(params[0]);
+                params[0] = "1000";
+            }
 
             Object spawned = ObjFindName(vec[1]);
 
             if (vec[2] == "x") {
+                game.command.paint_line = "x";
+                game.command.paint_pick_x = Int(params[0]);
                 for (int i = 0; i < game.y + 1; i++) {
                     game.field[i][Int(params[0])] = spawned;
                 }
             }
             else if (vec[2] == "y") {
+                game.command.paint_line = "y";
+                game.command.paint_pick_y = Int(params[1]);
                 for (int i = 0; i < game.x + 1; i++) {
-                    game.field[Int(params[0])][i] = spawned;
+                    game.field[Int(params[1])][i] = spawned;
                 }
             }
             else {
+                game.command.paint_line = "point";
+                game.command.paint_pick_x = Int(params[0]);
+                game.command.paint_pick_y = Int(params[1]);
                 game.field[Int(params[1])][Int(params[0])] = spawned;
             }
 
-            Field_Out(Int(params[0]), Int(params[1]));
+            Field_Out(Int(params[1]), Int(params[0]));
         }
         else if (vec[0] == "replace") {
             Object replaced = ObjFindName(vec[1]);
@@ -890,6 +929,7 @@ void CommandTab(string command) {
                     }
                     else if (game.field[y][x].id == replaced.id) {
                         game.field[y][x] = replacer;
+                        OFE(replacer, { y, x }, true);
                     }
                 }
             }
@@ -897,8 +937,8 @@ void CommandTab(string command) {
                 player.point = plate;
                 crims.point = plate;
                 phantom.point = plate;
+                Field_Out();
             }
-            Field_Out();
         }
         else if (vec[0] == "place")
         {
@@ -910,6 +950,7 @@ void CommandTab(string command) {
                 player.pos.x = Int(params[0]);
                 player.pos.y = Int(params[1]);
                 game.movfield[player.pos.y][player.pos.x] = player;
+                ForeEdit(player.icon, Occurate(player.pos), player.color, player.back_color);
             }
             else if (vec[1] == "crims") {
                 game.movfield[crims.pos.y][crims.pos.x] = uplate;
@@ -917,6 +958,7 @@ void CommandTab(string command) {
                 crims.pos.x = Int(params[0]);
                 crims.pos.y = Int(params[1]);
                 game.movfield[crims.pos.y][crims.pos.x] = crims;
+                ForeEdit(crims.icon, Occurate(crims.pos), crims.color, crims.back_color);
             }
             else if (vec[1] == "phantom") {
                 game.movfield[phantom.pos.y][phantom.pos.x] = uplate;
@@ -924,9 +966,8 @@ void CommandTab(string command) {
                 phantom.pos.x = Int(params[0]);
                 phantom.pos.y = Int(params[1]);
                 game.movfield[phantom.pos.y][phantom.pos.x] = phantom;
+                ForeEdit(phantom.icon, Occurate(phantom.pos), phantom.color, phantom.back_color);
             }
-
-            Field_Out(Int(params[0]), Int(params[1]));
         }
         else if (vec[0] == "active")
         {
@@ -1215,12 +1256,13 @@ void CommandInput() {
             ForePrint(command, "LIGHT RED");
 
             SetConsoleCursorPosition(hand, { short(modals.field_pos.x + size("Enter Command: ") + size(command)), short(modals.field_pos.y + game.y + 3) });
-            for (int i = 0; i < size(maybe[0]) + 4; i++) cerr << ' ';
+            if (size(maybe) != 0) for (int i = 0; i < size(maybe[0]) + 4; i++) cerr << ' ';
 
             SetConsoleCursorPosition(hand, { short(modals.field_pos.x + size("Enter Command: ") + size(command)), short(modals.field_pos.y + game.y + 3) });
             vector<string> mmaybe = Find(game.commands, command);
-            if (size(mmaybe) != 0) Fore("GRAY"); 
+            if (size(mmaybe) != 0) 
             {
+                Fore("GRAY");
                 maybe = mmaybe;
                 cerr << "  ~" << maybe[0] << endl;
             }
@@ -1515,6 +1557,7 @@ public:
         switch (dir)
         {
         case ' ':
+            ClearPaint();
             events.pause = !events.pause;
             Field_GameActive();
             break;

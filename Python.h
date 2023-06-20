@@ -1,4 +1,8 @@
 #pragma once //Python V1.2.5
+/*
+* SetConsoleCursorPosition - x, y
+* field - y, x
+*/
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -87,7 +91,7 @@ void Drop(inp text, string file) {
 
 #pragma region ReType
 
-double Int(string num) {
+int Int(string num) {
 	double ant = 0;
 	int x = 0;
 	map<char, int> nums = { {'0', 0}, {'1', 1}, {'2', 2}, {'3', 3}, {'4', 4}, {'5', 5}, {'6', 6}, {'7', 7}, {'8', 8}, {'9', 9} };
@@ -128,7 +132,7 @@ char Char(string in) {
 }
 
 bool Bool(string text) {
-	bool swit;
+	bool swit = false;
 	if (text == "true")
 	{
 		swit = true;
@@ -175,7 +179,8 @@ void Fore(string color = "BLACK", string background = "BLACK") {
 	cerr << "";
 }
 
-void ForePrint(string text, string color = "BLACK", string background = "BLACK") {
+template<typename anytext>
+void ForePrint(anytext text, string color = "BLACK", string background = "BLACK") {
 	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 	int brush = (16 * colors[background]) + colors[color];
 
