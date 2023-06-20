@@ -73,7 +73,7 @@ void Field_Comporator(vector<vector<int>> chosen_map, map<string, map<char, int>
 
     for (int i = 0; i < game.y + 1; i++)
     {
-        vector<MovableObject> temp;
+        vector<Entity> temp;
         for (int j = 0; j < game.x + 1; j++)
         {
             temp.push_back(uplate);
@@ -105,24 +105,6 @@ void Field_Comporator(vector<vector<int>> chosen_map, map<string, map<char, int>
     game.movfield[phantom.pos.y][phantom.pos.x] = phantom;
 
     game.fruit_pos = { {player.pos.x, player.pos.y}, {1, 1}, {game.x - 1, 1}, {game.x - 1, game.y - 1}, {1, game.y - 1} };
-}
-
-void LightField_Comporator() {
-    for (int i = 0; i < game.y + 1; i++) {
-        vector<int> temp;
-        for (int j = 0; j < game.x + 1; j++)
-        {
-            if (events.night)
-            {
-                temp.push_back(Dark);
-            }
-            else
-            {
-                temp.push_back(Light);
-            }
-        }
-        game.lightfield.push_back(temp);
-    }
 }
 
 
@@ -216,25 +198,23 @@ void Game_Play() {
 
 
 
-void main() {
-    SetBooferWindow(100, 50);
-    SetWindow(1500, 1000);
-    SetConcoleFont(15, 24);
-    SetShowCursor(false);
-    Beep(550, 300);
-    Beep(500, 100);
-    Beep(500, 100);
-    Beep(600, 50);
-
-    BaseObjectsInit();
-    BaseMovableObjectInit();
+void Game_Init() {
     game.objects = { {plate, token, fruit, tabl, bush, phantwall, wall, torch}, { player, crims, phantom } };
     CommandGenerate();
+    sounds.GameStart();
     Field_Comporator(classic_map, classic_pos);
-    LightField_Comporator();
     Field_Out();
-    Field_Out();
-    BaseObjectsInit();
-
     Game_Play();
+}
+
+void WorldInit() {
+    BaseConsoleGameInit();
+    BaseObjectsInit();
+    BaseMovableObjectInit();
+    CommandGenerate();
+}
+
+void main() {
+    WorldInit();
+    Game_Init();
 }

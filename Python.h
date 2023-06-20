@@ -15,6 +15,7 @@
 #include <tuple>
 using namespace std;
 HANDLE hand = GetStdHandle(STD_OUTPUT_HANDLE);
+void Fore(string color = "BLACK", string background = "BLACK");
 map<string, int> colors = {
 	{"BLACK", 0}, {"BLUE", 1}, {"GREEN", 2}, {"CYAN", 3}, {"RED", 4}, {"MAGENTA", 5}, {"YELLOW", 6}, {"WHITE", 7},
 	{"GRAY", 8}, {"LIGHT BLUE", 9}, {"LIGHT GREEN", 10}, {"LIGHT CYAN", 11}, {"LIGHT RED", 12}, {"LIGHT MAGENTA", 13}, {"LIGHT YELLOW", 14}, {"LIGHT WHITE", 15} };
@@ -31,7 +32,7 @@ void SetWindow(int Width, int Height)
 	SetWindowPos(GetConsoleWindow(), HWND_TOP, -4, -4, Width, Height, NULL);
 }
 
-void SetConcoleFont(int sym_x = 11, int sym_y = 22)
+void SetConsoleFont(int sym_x = 11, int sym_y = 22)
 {
 	CONSOLE_FONT_INFOEX cfi;
 	cfi.cbSize = sizeof(cfi);
@@ -67,6 +68,16 @@ void SetShowCursor(bool param) {
 }
 
 
+void BaseConsoleGameInit() {
+	srand(time(NULL));
+	SetBooferWindow(100, 50);
+	SetWindow(1500, 1000);
+	SetConsoleFont(15, 24);
+	SetShowCursor(false);
+
+	Fore("LIGHT RED", "BLACK");
+}
+
 
 string Open(string file) {
 	string out = ""; ifstream xfile; string strin = "";
@@ -87,6 +98,13 @@ void Drop(inp text, string file) {
 	xfile << text;
 	xfile.close();
 }
+
+
+class Pos {
+public:
+	int x;
+	int y;
+};
 
 
 #pragma region ReType
@@ -161,6 +179,13 @@ string Str(in obj) {
 	return out;
 }
 
+Pos Posit(vector<int> vec) {
+	Pos pos;
+	pos.x = vec[1];
+	pos.y = vec[0];
+	return pos;
+}
+
 #pragma endregion
 
 template<typename input>
@@ -169,7 +194,9 @@ string Type(input in) {
 }
 
 
-void Fore(string color = "BLACK", string background = "BLACK") {
+
+
+void Fore(string color, string background) {
 	int brush = (16 * colors[background]) + colors[color];
 
 	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -262,6 +289,20 @@ string Input(string text) {
 }
 
 #pragma endregion
+
+
+template<typename any>
+any Choice(vector<any> vec) {
+	return vec[Randint(size(vec))];
+}
+
+template<typename any1>
+any1 RandSnetch(vector<any1> vec) {
+	int num = Randint(size(vec));
+	any1 elem = vec[num];
+	vec = vec.errase(num);
+	return elem;
+}
 
 
 vector<int> VecGenerator(int x, int range) {
@@ -462,15 +503,6 @@ string Connect(vector<string> vec, string connect = "") {
 		else (text += vec[i] + connect);
 	}
 	return text;
-}
-
-
-
-void InitAll() {
-	SetBooferWindow(100, 50);
-	SetWindow(1500, 1000);
-	SetConcoleFont(15, 24);
-	SetShowCursor(false);
 }
 
 
