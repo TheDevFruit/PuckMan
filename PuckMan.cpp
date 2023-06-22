@@ -104,7 +104,7 @@ void Field_Comporator(vector<vector<int>> chosen_map, map<string, map<char, int>
     game.movfield[crims.pos.y][crims.pos.x] = crims;
     game.movfield[phantom.pos.y][phantom.pos.x] = phantom;
 
-    game.fruit_pos = { {player.pos.x, player.pos.y}, {1, 1}, {game.x - 1, 1}, {game.x - 1, game.y - 1}, {1, game.y - 1} };
+    game.fruit_pos = { {player.pos.y, player.pos.x}, {1, 1}, {1, game.x - 1}, {game.y - 1, game.x - 1}, {game.y - 1, 1} };
 }
 
 
@@ -153,9 +153,8 @@ void Game_Play() {
         }
 
 
-        if (((PosConside(player.pos, crims.pos) and crims.active and !crims.die) or (PosConside(phantom.pos, player.pos) and phantom.active and !phantom.die)) and events.mode != Panic) {
-            Game_Lose();
-            break;
+        if (((player.pos.Conside(crims.pos) and crims.active and !crims.die) or (player.pos.Conside(phantom.pos) and phantom.active and !phantom.die)) and events.mode != Panic) {
+
         }
         else if (game.score >= 15000) {
             Game_Win();
@@ -203,7 +202,7 @@ void Game_Init() {
     CommandGenerate();
     sounds.GameStart();
     Field_Comporator(classic_map, classic_pos);
-    Field_Out();
+    FieldOut();
     Game_Play();
 }
 

@@ -104,6 +104,15 @@ class Pos {
 public:
 	int x;
 	int y;
+
+	bool Conside(Pos obj2) {
+		return (x == obj2.x and y == obj2.y);
+	}
+
+	void Set() {
+		HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleCursorPosition(handle, { short(x), short(y) });
+	}
 };
 
 
@@ -250,14 +259,8 @@ int Norm(int num, vector<int> range) {
 }
 
 int Collapse(int num, vector<int> range) {
-	if (num < range[0])
-	{
-		num = range[0];
-	}
-	else if (num > range[1])
-	{
-		num = range[1];
-	}
+	if (num < range[0]) num = range[0];
+	else if (num > range[1]) num = range[1];
 	return num;
 }
 
