@@ -1,4 +1,4 @@
-#pragma once //Python V1.2.5
+#pragma once //Python V1.3.1
 /*
 * SetConsoleCursorPosition - x, y
 * field - y, x
@@ -6,26 +6,38 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
 #include <time.h>
-#include <math.h>
-#include <map>
 #include <windows.h>
-#include <vector>
+
 #include <conio.h>
+
+#include <map>
+#include <vector>
 #include <tuple>
+
+#include <math.h>
+#include <algorithm>
 using namespace std;
 HANDLE hand = GetStdHandle(STD_OUTPUT_HANDLE);
+
 void Fore(string color = "BLACK", string background = "BLACK");
 map<string, int> colors = {
 	{"BLACK", 0}, {"BLUE", 1}, {"GREEN", 2}, {"CYAN", 3}, {"RED", 4}, {"MAGENTA", 5}, {"YELLOW", 6}, {"WHITE", 7},
 	{"GRAY", 8}, {"LIGHT BLUE", 9}, {"LIGHT GREEN", 10}, {"LIGHT CYAN", 11}, {"LIGHT RED", 12}, {"LIGHT MAGENTA", 13}, {"LIGHT YELLOW", 14}, {"LIGHT WHITE", 15} };
-vector<string> reversed_colors = { "BLACK", "BLUE", "GREEN", "CYAN", "RED", "MAGENTA", "YELLOW", "WHITE", "GRAY", "LIGHT BLUE", "LIGHT GREEN", "LIGHT CYAN", "LIGHT RED", "LIGHT MAGENTA", "LIGHT YELLOW", "LIGHT WHITE" };
+vector<string> reversed_colors = { 
+"BLACK", "BLUE", "GREEN", "CYAN", "RED", "MAGENTA", "YELLOW", "WHITE",
+"GRAY", "LIGHT BLUE", "LIGHT GREEN", "LIGHT CYAN", "LIGHT RED", "LIGHT MAGENTA", "LIGHT YELLOW", "LIGHT WHITE" };
 int base_color = 0;
+pair<string, string> bcolors {"LIGHT RED", "BLACK"};
 
 vector<string> Split(string text, string dived);
 bool isnumeric(string in);
 
 
+
+
+#pragma region Console Attribute Funcs
 
 void SetWindow(int Width, int Height)
 {
@@ -75,8 +87,11 @@ void BaseConsoleGameInit() {
 	SetConsoleFont(15, 24);
 	SetShowCursor(false);
 
-	Fore("LIGHT RED", "BLACK");
+	Fore(bcolors.first, bcolors.second);
 }
+
+#pragma endregion
+
 
 
 string Open(string file) {
@@ -100,6 +115,9 @@ void Drop(inp text, string file) {
 }
 
 
+
+#pragma region Pos
+
 class Pos {
 public:
 	int x;
@@ -115,20 +133,28 @@ public:
 	}
 };
 
+void SetPos(int y, int x) {
+	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleCursorPosition(handle, { short(x), short(y) });
+}
+
+#pragma endregion
+
+
 
 #pragma region ReType
 
+template<typename input>
+string Type(input in) {
+	return typeid(in).name();
+}
+
+
 int Int(string num) {
 	double ant = 0;
-	int x = 0;
 	map<char, int> nums = { {'0', 0}, {'1', 1}, {'2', 2}, {'3', 3}, {'4', 4}, {'5', 5}, {'6', 6}, {'7', 7}, {'8', 8}, {'9', 9} };
 
-	for (int i = 0; i < size(num); i++)
-	{
-		double power = pow(10, ((size(num) - 1) - x));
-		ant += nums[num[i]] * power;
-		x += 1;
-	}
+	for (int i = 0; i < size(num); i++) ant += nums[num[i]] * pow(10, (size(num) - 1 - i));
 	return ant;
 }
 
@@ -138,9 +164,9 @@ double Float(string num) {
 	int y = 0;
 	for (int i = 0; i < size(num); i++)
 	{
-		if (num[i] != '.' and y == 0) { num1 += num[i]; }
-		else if (y == 1) { num2 += num[i]; }
-		else { y = 1; }
+		if (num[i] != '.' and y == 0) num1 += num[i];
+		else if (y == 1) num2 += num[i];
+		else y = 1;
 	}
 
 	double ant1 = Int(num1);
@@ -197,26 +223,22 @@ Pos Posit(vector<int> vec) {
 
 #pragma endregion
 
-template<typename input>
-string Type(input in) {
-	return typeid(in).name();
-}
 
 
-
+#pragma region Output Decorators
 
 void Fore(string color, string background) {
 	int brush = (16 * colors[background]) + colors[color];
 
 	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(handle, brush);
+	SetConsoleTextAttribute(handle, brush); cerr << "";
 
+	bcolors = { color, background };
 	base_color = brush;
-	cerr << "";
 }
 
 template<typename anytext>
-void ForePrint(anytext text, string color = "BLACK", string background = "BLACK") {
+void ForePrint(anytext text, string color = bcolors.first, string background = bcolors.second) {
 	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 	int brush = (16 * colors[background]) + colors[color];
 
@@ -225,18 +247,14 @@ void ForePrint(anytext text, string color = "BLACK", string background = "BLACK"
 	SetConsoleTextAttribute(handle, base_color);
 }
 
-//y,x
-void ForeEdit(char obj, vector<int> vec, string color = "BLACK", string background = "BLACK") {
-	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleCursorPosition(handle, { short(vec[1]), short(vec[0]) }); //x,y
+template<typename anytext>
+void Edit(anytext obj, Pos pos, string color = bcolors.first, string background = bcolors.second) {
+	SetPos(pos.y, pos.x);
 	ForePrint(Str(obj), color, background);
 }
 
-void Edit(char obj, vector<int> vec) {
-	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleCursorPosition(handle, { short(vec[1]), short(vec[0]) });
-	cerr << obj;
-}
+#pragma endregion
+
 
 
 #pragma region Easy Python Functions
@@ -246,7 +264,8 @@ int Factor(int num) {
 	return num * Factor(num - 1);
 }
 
-int Norm(int num, vector<int> range) {
+
+int Loop(int num, vector<int> range) {
 	if (num < range[0])
 	{
 		num = range[1];
@@ -263,6 +282,7 @@ int Collapse(int num, vector<int> range) {
 	else if (num > range[1]) num = range[1];
 	return num;
 }
+
 
 int Mod(int num) {
 	int a;
@@ -286,64 +306,12 @@ int Round(double num) {
 	return a;
 }
 
+
 string Input(string text) {
 	string a; cerr << text << " ";  getline(cin, a);
 	return a;
 }
 
-#pragma endregion
-
-
-template<typename any>
-any Choice(vector<any> vec) {
-	return vec[Randint(size(vec))];
-}
-
-template<typename any1>
-any1 RandSnetch(vector<any1> vec) {
-	int num = Randint(size(vec));
-	any1 elem = vec[num];
-	vec = vec.errase(num);
-	return elem;
-}
-
-
-vector<int> VecGenerator(int x, int range) {
-	srand(time(NULL));
-	vector<int> vec;
-	for (int i = 0; i < x; i++) { vec.push_back(rand() % range); }
-	return vec;
-}
-
-vector<vector<int>> Vec2DGenerator(int x, int y, int range) {
-	srand(time(NULL));
-	vector<vector<int>> vec;
-	for (int i = 0; i < y; i++) {
-		vector<int> temp;
-		for (int j = 0; j < x; j++) { temp.push_back(rand() % range); }
-		vec.push_back(temp);
-	}
-	return vec;
-}
-
-vector<vector<vector<int>>> Vec3DGenerator(int x, int y, int z, int range) {
-	srand(time(NULL));
-	vector<vector<vector<int>>> vec;
-	for (int i = 0; i < y; i++) {
-		vector<vector<int>> temp;
-		for (int j = 0; j < x; j++)
-		{
-			vector<int> temp2;
-			for (int h = 0; h < z; h++)
-			{
-				temp2.push_back(rand() % range);
-			}
-			temp.push_back(temp2);
-		}
-		vec.push_back(temp);
-	}
-	return vec;
-}
 
 vector<int> Range(int start, int end = 0, int step = 1) {
 	vector<int> vec;
@@ -363,6 +331,12 @@ vector<int> Range(int start, int end = 0, int step = 1) {
 	}
 	return vec;
 }
+
+#pragma endregion
+
+
+
+#pragma region Conditional Funcs
 
 bool isnumeric(string in) {
 	bool out = false;
@@ -422,6 +396,69 @@ bool isalpha(string in) {
 	}
 	return out;
 }
+
+#pragma endregion
+
+
+
+#pragma region Random
+
+template<typename any>
+any Choice(vector<any> vec) {
+	return vec[Randint(size(vec))];
+}
+
+template<typename any1>
+any1 RandSnetch(vector<any1> vec) {
+	int num = Randint(size(vec));
+	any1 elem = vec[num];
+	vec = vec.errase(num);
+	return elem;
+}
+
+#pragma endregion
+
+
+
+#pragma region Vectors
+
+vector<int> VecGenerator(int x, int range) {
+	srand(time(NULL));
+	vector<int> vec;
+	for (int i = 0; i < x; i++) { vec.push_back(rand() % range); }
+	return vec;
+}
+
+vector<vector<int>> Vec2DGenerator(int x, int y, int range) {
+	srand(time(NULL));
+	vector<vector<int>> vec;
+	for (int i = 0; i < y; i++) {
+		vector<int> temp;
+		for (int j = 0; j < x; j++) { temp.push_back(rand() % range); }
+		vec.push_back(temp);
+	}
+	return vec;
+}
+
+vector<vector<vector<int>>> Vec3DGenerator(int x, int y, int z, int range) {
+	srand(time(NULL));
+	vector<vector<vector<int>>> vec;
+	for (int i = 0; i < y; i++) {
+		vector<vector<int>> temp;
+		for (int j = 0; j < x; j++)
+		{
+			vector<int> temp2;
+			for (int h = 0; h < z; h++)
+			{
+				temp2.push_back(rand() % range);
+			}
+			temp.push_back(temp2);
+		}
+		vec.push_back(temp);
+	}
+	return vec;
+}
+
 
 vector<string> Find(vector<string> vec, string item) {
 	vector<string> out;
@@ -508,6 +545,8 @@ string Connect(vector<string> vec, string connect = "") {
 	return text;
 }
 
+#pragma endregion
+
 
 
 class Modal {
@@ -532,9 +571,9 @@ public:
 		frame.color = collor;
 		frame.back_color = back_collor;
 	}
-	void Out(int in_y, int in_x) {
 
-		ForeEdit(frame.corners[0], { in_y, in_x }, frame.color, frame.back_color);
+	void Out(Pos pos) {
+		Edit(frame.corners[0], pos, frame.color, frame.back_color);
 		if (!numeric) for (int i = 0; i < x * wide; i++) ForePrint(Str(frame.side_horizontal), frame.color, frame.back_color);
 		else for (int i = 0; i < x * wide; i++)
 			if (i % num_wide == 0) ForePrint(Str(i / num_wide % 10), frame.color, frame.back_color);
@@ -544,7 +583,8 @@ public:
 
 		for (auto& k : Range(0, y))
 		{
-			ForeEdit(frame.side_vertical, { in_y + 1 + k, in_x }, frame.color, frame.back_color);
+			SetPos(pos.y + k + 1, pos.x);
+			ForePrint(frame.side_vertical, frame.color, frame.back_color);
 			for (auto& h : Range(0, x* wide))
 				if (size(content[k]) <= h) ForePrint(Str(' '), color, back_color);
 				else ForePrint(Str(content[k][h]), color, back_color);
@@ -552,32 +592,29 @@ public:
 		}
 
 
-		ForeEdit(frame.corners[2], { in_y + y + 1, in_x }, frame.color, frame.back_color);
+		Edit(frame.corners[2], Posit({ pos.y + y + 1, pos.x }), frame.color, frame.back_color);
 		for (int i = 0; i < x * wide; i++) ForePrint(Str(frame.side_horizontal), frame.color, frame.back_color);
 		ForePrint(Str(frame.corners[3]), frame.color, frame.back_color);
 	}
-	void OutFrame(int in_y, int in_x) {
-
-		ForeEdit(frame.corners[0], { in_y, in_x }, frame.color);
+	void OutFrame(Pos pos) {
+		Edit(frame.corners[0], pos, frame.color);
 		for (int i = 0; i < x; i++) ForePrint(Str(frame.side_horizontal), frame.color);
 
 		ForePrint(Str(frame.corners[1]), frame.color);
 
 		for (auto& k : Range(0, y)) {
-			ForeEdit(frame.side_vertical, { in_y + 1 + k, in_x }, frame.color);
-			ForeEdit(frame.side_vertical, { in_y + 1 + k, in_x + x + 1 }, frame.color);
+			Edit(frame.side_vertical, Posit({ pos.y + 1 + k, pos.x }), frame.color);
+			Edit(frame.side_vertical, Posit({ pos.y + 1 + k, pos.x + x + 1 }), frame.color);
 		}
 
-		ForeEdit(frame.corners[2], { in_y + y + 1, in_x }, frame.color);
+		Edit(frame.corners[2], Posit({ pos.y + y + 1, pos.x }), frame.color);
 		for (int i = 0; i < x; i++) ForePrint(Str(frame.side_horizontal), frame.color);
 
 		ForePrint(Str(frame.corners[3]), frame.color);
 	}
-	void OutContent(int in_y, int in_x) {
-
-		HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	void OutContent(Pos pos) {
 		for (auto& k : Range(0, y)) {
-			SetConsoleCursorPosition(handle, { short(in_x), short(in_y + k) });
+			SetPos(pos.y + k, pos.x);
 			ForePrint(content[k], color, back_color);
 		}
 		cerr << endl;

@@ -5,6 +5,8 @@
 
 #pragma region Maps
 
+map<int, Object> map_coding;
+
 map<string, map<char, int>> classic_pos = { {"player.pos", {{'x', 9}, {'y', 15}}}, {"crims.pos", {{'x', 9}, {'y', 9}}}, {"phantom.pos", {{'x', 8}, {'y', 9}} } };
 
 vector<vector<int>> classic_map = {
@@ -68,8 +70,6 @@ vector<vector<int>> colos_map = Vec2DGenerator(1, 30, 30);
 void Field_Comporator(vector<vector<int>> chosen_map, map<string, map<char, int>> chosen_pos) {
     game.y = size(chosen_map) - 1;
     game.x = size(chosen_map[0]) - 1;
-
-    ModalsInit();
 
     for (int i = 0; i < game.y + 1; i++)
     {
@@ -136,37 +136,37 @@ void Game_Play() {
 
     while (true)
     {
-        if (crims_timer <= 0 and !events.pause and !events.freeze and crims.active and player.active)
+        if (crims_timer <= 0 and !Event.pause and !Event.freeze and crims.active and player.active)
         {
             crims_move.Move();
             crims_timer = crims.speed;
         }
-        if (phantom_timer <= 0 and !events.pause and !events.freeze and phantom.active and player.active)
+        if (phantom_timer <= 0 and !Event.pause and !Event.freeze and phantom.active and player.active)
         {
             phantom_move.Move();
             phantom_timer = phantom.speed;
         }
-        if (infection_timer <= 0 and !events.pause)
+        if (infection_timer <= 0 and !Event.pause)
         {
             Infection();
             infection_timer = game.speed * 5;
         }
 
 
-        if (((player.pos.Conside(crims.pos) and crims.active and !crims.die) or (player.pos.Conside(phantom.pos) and phantom.active and !phantom.die)) and events.mode != Panic) {
+        if (((player.pos.Conside(crims.pos) and crims.active and !crims.die) or (player.pos.Conside(phantom.pos) and phantom.active and !phantom.die)) and Event.mode != Panic) {
 
         }
         else if (game.score >= 15000) {
             Game_Win();
             break;
         }
-        else if (game.objects.first[token.id].collected == 50 and events.fruits_spawned == ZeroWave)  events.EvSpawnFruit();
+        else if (game.objects.first[token.id].collected == 50 and Event.fruits_spawned == ZeroWave)  Event.ToSpawnFruit();
         else if (panic_timer <= 0) {
-            events.EvUnPanic();
+            Event.ToUnPanic();
             panic_timer = game.speed * 10;
         }
         else if (fun_timer <= 0 and !player.active) {
-            funny = events.EvUnPlayer(funny);
+            funny = Event.ToUnPlayer(funny);
             fun_timer = game.speed;
         }
 
@@ -178,8 +178,8 @@ void Game_Play() {
 
 
 
-        if (!events.pause) {
-            if (events.mode == Panic) panic_timer--;
+        if (!Event.pause) {
+            if (Event.mode == Panic) panic_timer--;
             game.timer++;
             game.tick = (2 / (game.timer)) * 10000000;
             crims_timer--;
@@ -197,11 +197,12 @@ void Game_Play() {
 
 
 
-void Game_Init() {
+void GameInit() {
     game.objects = { {plate, token, fruit, tabl, bush, phantwall, wall, torch}, { player, crims, phantom } };
     CommandGenerate();
-    sounds.GameStart();
+    Sounds.GameStart();
     Field_Comporator(classic_map, classic_pos);
+    Modals.Init();
     FieldOut();
     Game_Play();
 }
@@ -209,11 +210,12 @@ void Game_Init() {
 void WorldInit() {
     BaseConsoleGameInit();
     BaseObjectsInit();
-    BaseMovableObjectInit();
+    map_coding = { {0, plate}, {1, token}, {2, wall}, {3, phantwall}, {4, torch}, {5, tabl}, {6, bush} };
+    BaseEntityInit();
     CommandGenerate();
 }
 
 void main() {
     WorldInit();
-    Game_Init();
+    GameInit();
 }

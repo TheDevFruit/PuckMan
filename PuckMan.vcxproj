@@ -130,6 +130,7 @@
     <ClCompile Include="PuckMan.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DataPack.h" />
     <ClInclude Include="Movements.h" />
     <ClInclude Include="Python.h" />
   </ItemGroup>
