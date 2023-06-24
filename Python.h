@@ -44,7 +44,7 @@ void SetWindow(int Width, int Height)
 	SetWindowPos(GetConsoleWindow(), HWND_TOP, -4, -4, Width, Height, NULL);
 }
 
-void SetConsoleFont(int sym_x = 11, int sym_y = 22)
+void SetConsoleFont(int sym_x = 15, int sym_y = 24)
 {
 	CONSOLE_FONT_INFOEX cfi;
 	cfi.cbSize = sizeof(cfi);
@@ -423,14 +423,12 @@ any1 RandSnetch(vector<any1> vec) {
 #pragma region Vectors
 
 vector<int> VecGenerator(int x, int range) {
-	srand(time(NULL));
 	vector<int> vec;
 	for (int i = 0; i < x; i++) { vec.push_back(rand() % range); }
 	return vec;
 }
 
 vector<vector<int>> Vec2DGenerator(int x, int y, int range) {
-	srand(time(NULL));
 	vector<vector<int>> vec;
 	for (int i = 0; i < y; i++) {
 		vector<int> temp;
@@ -441,7 +439,6 @@ vector<vector<int>> Vec2DGenerator(int x, int y, int range) {
 }
 
 vector<vector<vector<int>>> Vec3DGenerator(int x, int y, int z, int range) {
-	srand(time(NULL));
 	vector<vector<vector<int>>> vec;
 	for (int i = 0; i < y; i++) {
 		vector<vector<int>> temp;

@@ -124,7 +124,7 @@ public:
 };
 
 Object plate, token, fruit, tabl, bush, phantwall, wall, torch;
-Entity uplate, player, crims, phantom;
+Entity uplate, player, crims, phantom, moss;
 
 #pragma endregion
 
@@ -145,7 +145,7 @@ public:
     double timer = 0;
     double tick = 0;
     double score = 0;
-} game;
+} Game;
 
 struct Modals {
 public:
@@ -159,12 +159,27 @@ public:
         field_pos.x = 4;
         field_pos.y = 5;
         game_active_pos.y = field_pos.y - 4;
-        show_params_pos.x = field_pos.x + 0 + (game.x * 2) + 3;
+        show_params_pos.x = field_pos.x + 0 + (Game.x * 2) + 3;
         show_params_pos.y = field_pos.y;
-        show_pos_pos.x = field_pos.x + (game.x * 2) + 3;
+        show_pos_pos.x = field_pos.x + (Game.x * 2) + 3;
         show_pos_pos.y = show_params_pos.y + 9;
     }
 } Modals;
+
+struct GameLife {
+public:
+    bool active = false;
+    int speed = (Game.speed/100)*100;
+    Object zero_obj;
+    Object one_obj;
+    vector<int> birth_rule {3};
+    vector<int> life_rule {2,3};
+} GameLife;
+
+void BaseGameLifeInit() {
+    GameLife.zero_obj = plate;
+    GameLife.one_obj = token;
+}
 
 
 void BaseObjectsInit() {
@@ -179,33 +194,40 @@ void BaseObjectsInit() {
 }
 
 void BaseEntityInit() {
-    player.id = 5;
+    player.id = 1;
     player.icon = 1;
     player.name = "player";
     player.color = "YELLOW";
-    player.speed = (game.speed / 100) * 25;
+    player.speed = (Game.speed / 100) * 25;
     player.point = plate;
 
-    crims.id = 7;
+    crims.id = 2;
     crims.icon = 2;
     crims.name = "crims";
     crims.color = "RED";
-    crims.speed = (game.speed / 100) * 50;
+    crims.speed = (Game.speed / 100) * 50;
     crims.point = plate;
 
-    phantom.id = 9;
+    phantom.id = 3;
     phantom.icon = 2;
     phantom.name = "phantom";
     phantom.color = "MAGENTA";
-    phantom.speed = (game.speed / 100) * 75;
+    phantom.speed = (Game.speed / 100) * 75;
     phantom.point = plate;
+
+    moss.id = 4;
+    moss.icon = 2;
+    moss.name = "moss";
+    moss.color = "GREEN";
+    moss.speed = (Game.speed / 100) * 50;
+    moss.point = plate;
 }
 
 
 Object ObjFindName(string name);
 void OFE(Object obj, vector<int> vec, bool paint = false);
 void ReplaceObj(int y, int x, Object obj);
-void SpaceOut(int x, int y, bool pause = false);
+void SpaceOut(int y, int x, bool pause = false);
 void SpaceOneObj(int y, int x, bool pause = false);
 
 
@@ -220,17 +242,17 @@ public:
 
 
     bool ToUnPlayer(bool funny) {
-        for (int i = 0; i < size(game.field); i++)
+        for (int i = 0; i < size(Game.field); i++)
         {
-            for (int j = 0; j < size(game.field[i]); j++)
+            for (int j = 0; j < size(Game.field[i]); j++)
             {
                 if (funny)
                 {
-                    game.field[i][j] = bush;
+                    Game.field[i][j] = bush;
                 }
                 else
                 {
-                    game.field[i][j] = phantwall;
+                    Game.field[i][j] = phantwall;
                 }
             }
         }
@@ -242,26 +264,20 @@ public:
     }
 
     void ToSpawnFruit() {
-        for (int i = 0; i < size(game.fruit_pos); i++)
+        for (int i = 0; i < size(Game.fruit_pos); i++)
         {
-            game.field[game.fruit_pos[i][0]][game.fruit_pos[i][1]] = fruit;
-            OFE(fruit, { game.fruit_pos[i][0], game.fruit_pos[i][1] });
+            Game.field[Game.fruit_pos[i][0]][Game.fruit_pos[i][1]] = fruit;
+            OFE(fruit, { Game.fruit_pos[i][0], Game.fruit_pos[i][1] });
         }
         fruits_spawned += 1;
     }
 
     void ToScatter() {
-        if (mode != Panic)
-        {
-            mode = Scatter;
-        }
+        if (mode != Panic) mode = Scatter;
     }
 
     void ToUnScatter() {
-        if (mode != Panic)
-        {
-            mode = Pursuit;
-        }
+        if (mode != Panic) mode = Pursuit;
     }
 
     void ToPanic() {
@@ -270,8 +286,10 @@ public:
             mode = Panic;
             crims.speed *= 1, 5;
             phantom.speed /= 1, 5;
+            moss.speed *= 1, 5;
             crims.color = "BLUE";
             phantom.color = "BLUE";
+            moss.color = "BLUE";
         }
     }
 
@@ -281,8 +299,10 @@ public:
             mode = Pursuit;
             crims.speed /= 1, 5;
             phantom.speed *= 1, 5;
+            moss.speed /= 1, 5;
             crims.color = "RED";
             phantom.color = "MAGENTA";
+            moss.color = "GREEN";
         }
     }
 
@@ -291,13 +311,13 @@ public:
         if (!night)
         {
             night = true;
-            for (int i = 0; i < game.y; i++)
+            for (int i = 0; i < Game.y; i++)
             {
-                for (int j = 0; j < game.x; j++)
+                for (int j = 0; j < Game.x; j++)
                 {
-                    if (game.field[i][j].id < ObjFindName("bush").id and rand() % 100 < 5)
+                    if (Game.field[i][j].id < ObjFindName("bush").id and rand() % 100 < 5)
                     {
-                        game.field[i][j] = ObjFindName("bush");
+                        Game.field[i][j] = ObjFindName("bush");
                     }
                 }
             }
@@ -325,6 +345,7 @@ public:
 struct Mods {
 public:
     bool create = false;
+    bool gamelife = false;
 } Mods;
 
 struct Sounds {
