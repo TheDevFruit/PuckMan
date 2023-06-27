@@ -47,7 +47,8 @@ void UpdateFieldObject(Object obj) {
         for (int j = 0; j < Game.x + 1; j++)
         {
             if (obj.id == Game.field[i][j].id)
-            {
+            {   
+                obj.lighted = Game.field[i][j].lighted;
                 Game.field[i][j] = obj;
             }
         }
@@ -56,10 +57,8 @@ void UpdateFieldObject(Object obj) {
 }
 
 void ReplaceObj(int y, int x, Object obj) {
-    bool light = !Event.night;
-    if (Event.night) light = Game.field[y][x].lighted;
+    obj.lighted = Game.field[y][x].lighted or !Event.night;
     Game.field[y][x] = obj;
-    Game.field[y][x].lighted = light;
 }
 
 Object FieldPos(Pos pos) {
@@ -69,6 +68,15 @@ Object FieldPos(Pos pos) {
 void SetFieldPos(int y, int x) {
     vector<int> vec = Occurate({ y, x });
     SetPos(vec[Y], vec[X]);
+}
+
+vector<Pos> Crosspiece(int y, int x) {
+    return {
+        Posit({y-1, x}),
+        Posit({y, x-1}),
+        Posit({y+1, x}),
+        Posit({y, x+1})
+    };
 }
 
 #pragma endregion
@@ -87,6 +95,10 @@ void OFE(Object obj, vector<int> vec, bool paint) { // y, x
 // Entity Fore Edit
 void EFE(Entity obj, Pos pos) {
     SetFieldPos(pos.y, pos.x);
+    if (Event.mode == Panic and obj.id != player.id){
+        ForePrint(obj.icon, "BLUE", obj.point.back_color);
+        return;
+    }
     ForePrint(obj.icon, obj.color, obj.point.back_color);
 }
 
@@ -128,6 +140,7 @@ void Field_Show_Pos() {
         modal.In(point + " Player Pos: " + Str(player.pos.x) + " | " + Str(player.pos.y) + "\n");
         modal.In(point + " Crims Pos: " + Str(crims.pos.x) + " | " + Str(crims.pos.y) + "\n");
         modal.In(point + " Phantom Pos: " + Str(phantom.pos.x) + " | " + Str(phantom.pos.y) + "\n");
+        modal.In(point + " Moss Pos: " + Str(moss.pos.x) + " | " + Str(moss.pos.y) + "\n");
 
         modal.Out(Modals.show_pos_pos);
     }
@@ -139,9 +152,10 @@ void Field_Show_Params() {
         Modal modal;
         string point = Str((char)249);
         modal.CreateModal("\nParametrs:   \n", 1, 1, false, "LIGHT RED");
+        modal.In(point + " Mode: " + Str(Event.mode) + "\n");
         modal.In(point + " Game Time: " + Str(Game.timer) + "\n");
         modal.In(point + " Tokens: " + Str(Game.objects.first[token.id].collected) + "\n");
-        modal.In(point + " Tokens: " + Str(Game.objects.first[fruit.id].collected) + "\n");
+        modal.In(point + " Fruits: " + Str(Game.objects.first[fruit.id].collected) + "\n");
         modal.In(point + " Player Speed: " + Str(player.speed) + "\n");
         modal.In(point + " Crims Speed : " + Str(crims.speed) + "\n");
         modal.In(point + " Phantom Speed: " + Str(phantom.speed) + "\n");
@@ -173,7 +187,7 @@ void FieldOut(int pick_y, int pick_x) {
         for (int j = 0; j < Game.x + 1; j++) {
             if (Event.pause and ((j == pick_x and pick_y == 1000) or (i == pick_y and pick_x == 1000) or (i == pick_y and j == pick_x))){
                 ForePrint(Game.field[i][j].icon, Game.field[i][j].color, "LIGHT RED");
-                SpaceOut(j, i, pick_y != 1000);
+                SpaceOut(i, j, pick_y != 1000);
             }
             else if (!Event.night or (Event.night and Game.field[i][j].lighted)) {
                 ForePrint(Game.field[i][j].icon, Game.field[i][j].color, Game.field[i][j].back_color);
@@ -187,10 +201,10 @@ void FieldOut(int pick_y, int pick_x) {
         ForePrint("\n");
     }
 
+    if ((Game.field[player.pos.y][player.pos.x].lighted or !Event.night) and player.active)
+        EFE(player, player.pos);
     if (!GameLife.active)
     {
-        if ((Game.field[player.pos.y][player.pos.x].lighted or !Event.night) and player.active)
-            EFE(player, player.pos);
         if ((Game.field[crims.pos.y][crims.pos.x].lighted or !Event.night) and crims.active)
             EFE(crims, crims.pos);
         if ((Game.field[phantom.pos.y][phantom.pos.x].lighted or !Event.night) and phantom.active)
@@ -201,77 +215,55 @@ void FieldOut(int pick_y, int pick_x) {
 }
 
 
+void Space(Object obj, bool pause) {
+    if (pause) obj.back_color = "LIGHT RED";
+
+    if (obj.type == Wall) ForePrint(obj.icon, obj.color, obj.back_color);
+    else if (obj.type == Item) ForePrint(' ', "BLACK", obj.back_color);
+    else if (obj.type == Floor) ForePrint(' ', obj.color, obj.back_color);
+}
+
 void SpaceOut(int y, int x, bool pause) {
     if (x < Game.x) {
         Object obj = Game.field[y][x];
         Object obj2 = Game.field[y][x+1];
-
-        if (obj.wall == 0 or obj2.wall == 0)
+        
+        if (obj2.type == obj.type)
         {
-            if (pause) ForePrint(" ", "BLACK", "LIGHT RED");
-            else ForePrint(" ");
+            if (obj.layer <= obj2.layer)
+            {
+                Space(obj2, pause);
+            }
+            else
+            {
+                Space(obj, pause);
+            }
         }
-        else
+        else if (obj.type < obj2.type)
         {
-            if (obj.wall >= obj2.wall)
-            {
-                if (pause) ForePrint(obj.icon, obj.color, "LIGHT RED");
-                else ForePrint(obj.icon, obj.color, obj.back_color);
-            }
-            else if (obj.wall <= obj2.wall)
-            {
-                if (pause) ForePrint(obj2.icon, obj2.color, "LIGHT RED");
-                else ForePrint(obj2.icon, obj2.color, obj2.back_color);
-            }
+            Space(obj, pause);
+        }
+        else if (obj.type > obj2.type)
+        {
+            Space(obj2, pause);
         }
     }
 }
 
 void SpaceOneObj(int y, int x, bool pause) {
-    Object obj0 = Game.field[y][Collapse(x - 1, {0, Game.x})];
-    Object obj1 = Game.field[y][Collapse(x, { 0, Game.x })];
-    Object obj2 = Game.field[y][Collapse(x + 1, { 0, Game.x })];
-
     vector<int> vec = Occurate({ y, x });
     SetConsoleCursorPosition(hand, { short(vec[X]-1), short(vec[Y]) });
 
-    if (0 < x) {
-        string color = "LIGHT RED";
-        if (obj0.wall == 0 or obj1.wall == 0) {
-            if (!pause) color = "BLACK";
-            ForePrint(" ", "BLACK", color);
-        }
-        else if (obj0.wall >= obj1.wall) {
-            if (!pause) color = obj0.back_color;
-            ForePrint(obj0.icon, obj0.color, color);
-        }
-        else if (obj0.wall <= obj1.wall) {
-            if (!pause) color = obj1.back_color;
-            ForePrint(obj1.icon, obj1.color, color);
-        }
-    }
+    SpaceOut(y, NormLine(x - 1, 'x'), pause);
 
     SetConsoleCursorPosition(hand, { short(vec[X] + 1), short(vec[Y]) });
 
-    if (x < Game.x) {
-        string color = "LIGHT RED";
-        if (obj1.wall == 0 or obj2.wall == 0) {
-            if (!pause) color = "BLACK";
-            ForePrint(" ", "BLACK", color);
-        }
-        else if (obj1.wall >= obj2.wall) {
-            if (!pause) color = obj1.back_color;
-            ForePrint(obj1.icon, obj1.color, color);
-        }
-        else if (obj1.wall <= obj2.wall) {
-            if (!pause) color = obj2.back_color;
-            ForePrint(obj2.icon, obj2.color, color);
-        }
-    }
+    SpaceOut(y, NormLine(x, 'x'), pause);
 }
 
 
-bool InVec(int a, vector<int> vec) {
+template<typename any>
+bool InVec(any a, vector<any> vec) {
     for (auto& i : vec) if (i == a) return true;
     return false;
 }
@@ -282,46 +274,17 @@ bool InVec(int a, vector<int> vec) {
 
 void Infection() {
     for (int i = 1; i < Game.y; i++) for (int j = 1; j < Game.x; j++)
-        {
-            if (Game.field[i][j].virus)
-            {
+        {   if (Game.field[i][j].virus) {
+                Pos cell = Crosspiece(i, j)[rand() % 4];
                 Object virus = Game.field[i][j];
+
                 if (rand() % 100 <= virus.virus_chance) {
-                    switch (rand() % 4) {
-                    case 0:
-                        if (!Game.field[i - 1][j].wall) {
-                            if (Game.movfield[i-1][j].id == uplate.id) OFE(virus, {i - 1, j});
-                            ReplaceObj(i - 1, j, virus);
-                            SpaceOneObj(i - 1, j);
-                        }
-                        break;
-
-                    case 1:
-                        if (!Game.field[i][j - 1].wall) {
-                            if (Game.movfield[i - 1][j].id == uplate.id) OFE(virus, { i, j - 1 });
-                            ReplaceObj(i, j - 1, virus);
-                            SpaceOneObj(i, j - 1);
-                        }
-                        break;
-
-                    case 2:
-                        if (!Game.field[i + 1][j].wall) {
-                            if (Game.movfield[i - 1][j].id == uplate.id) OFE(virus, { i + 1, j });
-                            ReplaceObj(i + 1, j, virus);
-                            SpaceOneObj(i + 1, j);
-                        }
-                        break;
-
-                    case 3:
-                        if (!Game.field[i][j + 1].wall) {
-                            if (Game.movfield[i - 1][j].id == uplate.id) OFE(virus, { i, j + 1 });
-                            ReplaceObj(i, j + 1, virus);
-                            SpaceOneObj(i, j + 1);
-                        }
-                        break;
-
-                    default:
-                        break;
+                    if (InVec(Game.field[cell.y][cell.x].name, virus.virusable)) {
+                        if (Game.movfield[cell.y][cell.x].id == uplate.id and (Game.field[cell.y][cell.x].lighted or !Event.night)) 
+                            OFE(virus, { cell.y, cell.x });
+                        ReplaceObj(cell.y, cell.x, virus);
+                        if (Game.field[cell.y][cell.x].lighted or !Event.night) 
+                            SpaceOneObj(cell.y, j);
                     }
                 }
             }
@@ -329,16 +292,19 @@ void Infection() {
 }
 
 void BakeLight() {
-    for (int y = 0; y <= Game.y; y++) for (int x = 0; x <= Game.x; x++) Game.field[y][x].lighted = false;
+    if (Event.night)
+    {
+        for (int y = 0; y <= Game.y; y++) for (int x = 0; x <= Game.x; x++) Game.field[y][x].lighted = false;
 
-    for (int y = 0; y <= Game.y; y++) for (int x = 0; x <= Game.x; x++)
-        if (Game.field[y][x].light_source) {
-            int light_range = Game.field[y][x].light_power;
+        for (int y = 0; y <= Game.y; y++) for (int x = 0; x <= Game.x; x++)
+            if (Game.field[y][x].light_source) {
+                int light_range = Game.field[y][x].light_power;
 
-            for (int i = Collapse(y - light_range, { 0, Game.y }); i <= Collapse(y + light_range, { 0, Game.y }); i++)
-                for (int j = Collapse(x - light_range, { 0, Game.x }); j <= Collapse(x + light_range, { 0, Game.x }); j++)
-                    if (0 <= i <= Game.y and 0 <= j <= Game.x) Game.field[i][j].lighted = true;
-        }
+                for (int i = y - light_range; i <= y + light_range; i++)
+                    for (int j = x - light_range; j <= x + light_range; j++)
+                        if (0 <= i and i <= Game.y and 0 <= j and j <= Game.x) Game.field[i][j].lighted = true;
+            }
+    }
 }
 
 
@@ -541,32 +507,21 @@ public:
         }
         else if (Event.mode == Panic)
         {
-            vector<vector<int>> corns{ {1, 1}, { Game.y - 1, 1 }, { Game.y - 1, Game.x - 1 }, { 1, Game.x - 1 } };
-            int min = Mod(phantom.pos.y - corns[0][0]) + Mod(phantom.pos.x - corns[0][1]);
+            int min = Mod(phantom.pos.y - phantom.points[0][0]) + Mod(phantom.pos.x - phantom.points[0][1]);
             int min_num = 0;
-            for (int i = 0; i < size(corns); i++)
-            {
-                if (Mod(phantom.pos.y - corns[i][0]) + Mod(phantom.pos.x - corns[i][1]) < min)
+            for (int i = 0; i < size(phantom.points); i++) {
+                if (Mod(phantom.pos.y - phantom.points[i][0]) + Mod(phantom.pos.x - phantom.points[i][1]) <= min)
                 {
-                    min = Mod(phantom.pos.y - corns[i][0]) + Mod(phantom.pos.x - corns[i][1]);
+                    min = Mod(phantom.pos.y - phantom.points[i][0]) + Mod(phantom.pos.x - phantom.points[i][1]);
                     min_num = i;
                 }
             }
-            phantom.target = { {'y', corns[min_num][0]}, {'x', corns[min_num][1]} };
+            phantom.target = { {'y', phantom.points[min_num][0]}, {'x', phantom.points[min_num][1]} };
 
-            int diff_x = Mod(player.pos.x - phantom.pos.x);
-            int diff_y = Mod(player.pos.y - phantom.pos.y);
-            if (diff_x + diff_y <= 10)
-            {
-                if (min_num == 3)
-                {
-                    min_num = 0;
-                }
-                else
-                {
-                    min_num++;
-                }
-                phantom.target = { {'y', corns[min_num][0]}, {'x', corns[min_num][1]} };
+            if (Mod(player.pos.y - phantom.pos.y) + Mod(player.pos.x - phantom.pos.x) <= 10) {   
+                min_num += 1;
+                min_num = Loop(min_num, { 0, 3 });
+                phantom.target = { {'y', phantom.points[min_num][0]}, {'x', phantom.points[min_num][1]} };
             }
         }
 
@@ -636,7 +591,6 @@ public:
         if (phantom.point.lighted or !Event.night)
         {
             OFE(phantom.point, { phantom.pos.y, phantom.pos.x });
-            OFE(phantom.point, { phantom.pos.y, phantom.pos.x });
         }
         phantom.point = point;
         if (point.lighted or !Event.night) EFE(phantom, point_pos);
@@ -652,7 +606,7 @@ private:
         Object point = Game.field[point_pos.y][point_pos.x];
 
         if (point.ph_avalb) {
-            if (point.lighted or !Event.night) CursoreMove(point_pos, point);
+            CursoreMove(point_pos, point);
             Game.movfield[phantom.pos.y][phantom.pos.x] = uplate;
             phantom.pos = point_pos;
         }
@@ -665,14 +619,39 @@ struct MossMove {
 public:
     void Move() {
         srand(time(NULL));
-        path = { {'y', 0, -1, 0, Game.field[Game.y][moss.pos.x].cr_avalb}, {'x', 0, 0, -1, Game.field[moss.pos.y][Game.x].cr_avalb}, {'y', Game.y, 1, 0, Game.field[0][moss.pos.x].cr_avalb}, {'x', Game.x, 0, 1, Game.field[moss.pos.y][0].cr_avalb} };
+        path = { {'y', 0, -1, 0, Game.field[Game.y][moss.pos.x].mo_avalb}, {'x', 0, 0, -1, Game.field[moss.pos.y][Game.x].mo_avalb}, {'y', Game.y, 1, 0, Game.field[0][moss.pos.x].mo_avalb}, {'x', Game.x, 0, 1, Game.field[moss.pos.y][0].mo_avalb} };
         if (moss.die)
         {
             moss.target = { {'y', moss.start_pos.y}, {'x', moss.start_pos.x} };
         }
+        else if (Event.mode == Pursuit and Event.night)
+        {
+            pair<int, vector<int>> max = { 1000, {} };
+            for (int i = 0; i < Game.y + 1; i++) for (int j = 0; j < Game.x + 1; j++) {
+                if (Game.field[i][j].id == bush.id) {
+                    int len = Mod(moss.pos.y - i) + Mod(moss.pos.x - j);
+                    if (len <= max.first)
+                    {
+                        max.second = { i, j };
+                        max.first = len;
+                    }
+                }
+            }
+
+            if (max.first != 1000) {
+                moss.target = { {'y', max.second[0]}, {'x', max.second[1]} };
+            }
+            else goto pursuit_moss;
+        }
         else if (Event.mode == Pursuit)
         {
-            moss.target = { {'y', player.pos.y}, {'x', player.pos.x} };
+            pursuit_moss:
+            if (moss.pos.y == moss.target['y'] and moss.pos.x == moss.target['x'])
+            {
+                moss.points_pos += 1;
+                moss.points_pos = Loop(moss.points_pos, { 0,3 });
+            }
+            moss.target = { {'y', moss.points[moss.points_pos][0]}, {'x', moss.points[moss.points_pos][1]}};
         }
         else if (Event.mode == Scatter)
         {
@@ -680,50 +659,47 @@ public:
         }
         else if (Event.mode == Panic)
         {
-            Go(rand() % 4);
-            if (moss.pos.Conside(player.pos) and Event.mode == Panic and !moss.die)  Die();
-            if (moss.pos.Conside(moss.start_pos) and moss.die) Restart();
-            Game.movfield[moss.pos.y][moss.pos.x] = moss;
-            return;
+            pair<int, vector<int>> max = { 1000, {} };
+            for (int i = 0; i < Game.y + 1; i++) for (int j = 0; j < Game.x + 1; j++) {
+                    if (Game.field[i][j].id == bush.id) {
+                        int len = Mod(moss.pos.y - i) + Mod(moss.pos.x - j);
+                        if (len <= max.first)
+                        {
+                            max.second = { i, j };
+                            max.first = len;
+                        }
+                    }
+                }
+
+            if (max.first != 1000) {
+                moss.target = { {'y', max.second[0]}, {'x', max.second[1]} };
+            }
+            else 
+            {
+                Go(rand() % 4);
+                return;
+            }
         }
 
+        
+        if (moss.pos.y == moss.target['y'] and moss.pos.x == moss.target['x']) CursoreMove(moss.pos, moss.point);
 
-        int diff_x = Mod(moss.target['x'] - moss.pos.x) + 1;
-        int diff_y = Mod(moss.target['y'] - moss.pos.y) + 1;
-        bool plane;
-        if (diff_x >= diff_y) { plane = diff_x / diff_y <= 2; }
-        else { plane = diff_y / diff_x >= 2; }
+        else if (moss.target['y'] < moss.pos.y 
+            and (Game.field[moss.pos.y - 1][moss.pos.x].mo_avalb or moss.die)
+            and (moss.pos.y - 1 != moss.last_point.y and moss.pos.x != moss.last_point.x))
+            Go(Up);
 
+        else if (moss.target['x'] < moss.pos.x
+            and (Game.field[moss.pos.y][moss.pos.x - 1].mo_avalb or moss.die)
+            and (moss.pos.y != moss.last_point.y and moss.pos.x - 1 != moss.last_point.x))
+            Go(Left);
 
-
-        if ((moss.target['y'] == moss.pos.y) and (moss.target['x'] == moss.pos.x))
-        {
-            Go(rand() % 4);
-        }
-        else if (plane) {
-        y_move:
-            if ((moss.target['y'] < moss.pos.y))
-            {
-                Go(Up);
-            }
-            else if ((moss.target['y'] > moss.pos.y))
-            {
-                Go(Down);
-            }
-            else { goto x_move; }
-        }
-        else {
-        x_move:
-            if ((moss.target['x'] < moss.pos.x))
-            {
-                Go(Left);
-            }
-            else if ((moss.target['x'] > moss.pos.x))
-            {
-                Go(Right);
-            }
-            else { goto y_move; }
-        }
+        else if (moss.target['y'] > moss.pos.y
+            and (Game.field[moss.pos.y + 1][moss.pos.x].mo_avalb or moss.die)
+            and (moss.pos.y + 1 != moss.last_point.y and moss.pos.x != moss.last_point.x))
+            Go(Down);
+        else
+            Go(Right);
 
 
         if (moss.pos.Conside(player.pos) and Event.mode == Panic)  Die();
@@ -756,7 +732,7 @@ public:
             OFE(moss.point, { moss.pos.y, moss.pos.x });
         }
         moss.point = point;
-        if (point.lighted or !Event.night) EFE(moss, point_pos);
+        if ((point.lighted or !Event.night) and (point.id != bush.id or Event.night)) EFE(moss, point_pos);
         Field_Show_Pos();
     }
 
@@ -768,9 +744,16 @@ private:
         Pos point_pos = Posit({ NormLine(moss.pos.y + vec[2], 'y'), NormLine(moss.pos.x + vec[3], 'x') });
         Object point = Game.field[point_pos.y][point_pos.x];
 
-        if ((point.cr_avalb or moss.die) and !moss.last_point.Conside(point_pos)) {
+        if ((point.mo_avalb or moss.die) and !moss.last_point.Conside(point_pos)) {
             CursoreMove(point_pos, point);
             Game.movfield[moss.pos.y][moss.pos.x] = uplate;
+            if (Event.night and point.id == bush.id)
+            {
+                moss.point = mycelium;
+                moss.point.lighted = Game.field[point_pos.y][point_pos.x].lighted or !Event.night;
+                ReplaceObj(point_pos.y, point_pos.x, mycelium);
+                SpaceOneObj(moss.pos.y, moss.pos.x);
+            }
             moss.last_point = moss.pos;
             moss.pos = point_pos;
             cycle = 0;
@@ -789,10 +772,22 @@ public:
 
             int num = dir;
             if (num == 224) {}
-            else if (num == 119 or num == 72 or num == -26 or num == 87) Go(Up);
-            else if (num == 97 or num == 75 or num == -28 or num == 65) Go(Left);
-            else if (num == 115 or num == 80 or num == -21 or num == 83) Go(Down);
-            else if (num == 100 or num == 77 or num == -94 or num == 68) Go(Right);
+            else if (num == 119 or num == 72 or num == -26 or num == 87) {
+                Go(Up);
+                player.move_dir = Up;
+            }
+            else if (num == 97 or num == 75 or num == -28 or num == 65) {
+                Go(Left);
+                player.move_dir = Left;
+            }
+            else if (num == 115 or num == 80 or num == -21 or num == 83) {
+                Go(Down);
+                player.move_dir = Down;
+            }
+            else if (num == 100 or num == 77 or num == -94 or num == 68) {
+                Go(Right);
+                player.move_dir = Right;
+            }
 
             if (!crims.die) if (player.pos.Conside(crims.pos) and Event.mode == Panic and !crims.die)  crims_move.Die();
             if (!phantom.die) if (player.pos.Conside(phantom.pos) and Event.mode == Panic and !phantom.die)  phantom_move.Die();
@@ -838,11 +833,11 @@ public:
         Game.score += point.cost * Game.tick + point.cost;
 
         if (point.id == tabl.id) { Event.ToPanic(); Sounds.Tabl(); }
-        else if (point.id == fruit.id) { Sounds.Fruit(); }
+        else if (point.id == fruit.id) Sounds.Fruit();
         else if (point.name == "error") Sounds.Error();
-        else if (point.id == bush.id) {
+        else if (point.id == bush.id and player.point.id != bush.id) {
             Event.ToScatter();
-            if (Game.field[player.last_point.y][player.last_point.x].id != bush.id) Sounds.Bush();
+            Sounds.Bush();
         }
         if (point.id != bush.id and player.point.id == bush.id) { Event.ToUnScatter(); Sounds.NoBush(); }
     }
@@ -1027,9 +1022,13 @@ void CommandTab(string command) {
 
             if (vec[1] == "mode")
             {
+                Event.ToPanic();
                 int par = Pursuit;
                 if (param == "scatter") par = Scatter;
-                else if (param == "panic") par = Panic;
+                else if (param == "panic") {
+                    Event.ToPanic();
+                    par = Panic;
+                }
                 Event.mode = par;
             }
             else
@@ -1037,7 +1036,7 @@ void CommandTab(string command) {
                 bool par = Bool(param);
                 if (vec[1] == "night")
                 {
-                    if (par == true)
+                    if (par)
                     {
                         Event.ToNight();
                     }
@@ -1204,11 +1203,19 @@ void CommandTab(string command) {
                         block.light_source = Bool(params[0]);
                         block.light_power = Int(params[1]);
                     }
+                    else if (vec[3] == "layer")
+                    {
+                        vector<string> params = Split(vec[size(vec) - 1], ",");
+
+                        if (params[0] == "floor") block.type = Floor;
+                        else if (params[0] == "item") block.type = Item;
+                        else if (params[0] == "wall") block.type = Wall;
+                        block.layer = Int(params[1]);
+                    }
                     else if (vec[3] == "avalb")
                     {
                         vector<string> params = Split(vec[size(vec) - 1], ",");
 
-                        block.wall = Int(params[0]);
                         block.pl_avalb = Bool(params[1]);
                         block.cr_avalb = Bool(params[2]);
                         block.ph_avalb = Bool(params[3]);

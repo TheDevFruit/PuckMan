@@ -26,6 +26,11 @@ enum Line {
     X = 1,
     Y = 0
 };
+enum ObjTypes {
+    Floor = 0,
+    Item = 1,
+    Wall = 2
+};
 
 vector<string> commands;
 
@@ -43,6 +48,7 @@ public:
 
     bool virus = false;
     int virus_chance = 50;
+    vector<string> virusable;
 
     bool collectable = false;
     int cost = 0;
@@ -51,10 +57,13 @@ public:
     bool light_source = false;
     int light_power = 0;
 
-    int wall = 0;
+    int type = Floor;
+    int layer = 0;
+
     bool pl_avalb = false;
     bool cr_avalb = false;
     bool ph_avalb = false;
+    bool mo_avalb = false;
 
 
     bool lighted = false;
@@ -68,7 +77,7 @@ public:
         back_color = back_colors[iname];
 
         virus = viruses[iname];
-        int virus_chance = virus_chances[iname];
+        virus_chance = virus_chances[iname];
 
         collectable = collectables[iname];
         cost = costs[iname];
@@ -76,30 +85,36 @@ public:
         light_source = light_sources[iname];
         light_power = light_powers[iname];
 
+        type = types[iname];
+        layer = layers[iname];
+
         pl_avalb = pl_avalbs[iname];
-        wall = walls[iname];
         cr_avalb = cr_avalbs[iname];
         ph_avalb = ph_avalbs[iname];
+        mo_avalb = mo_avalbs[iname];
     }
 private:
-    map<string, int> ids{ {"plate", 0},       {"token", 1},     {"fruit", 2},     {"tabl", 3},     {"bush", 4},     {"phantwall", 5},     {"wall", 6},     {"torch", 7} };
-    map<string, char> icons{ {"plate", ' '}, { "token", 249 }, { "fruit", 15 }, { "tabl", 4 }, { "bush", 177 }, { "phantwall", 254 }, { "wall", 254 }, { "torch", 5 } };
-    map<string, string> back_colors{ {"plate", "BLACK"}, { "token", "BLACK" }, { "fruit", "BLACK" }, { "tabl", "BLACK" }, { "bush", "BLACK" }, { "phantwall", "LIGHT RED" }, { "wall", "LIGHT BLUE" }, { "torch", "BLACK" } };
-    map<string, string> colors{ {"plate", "BLACK"}, { "token", "LIGHT YELLOW" }, { "fruit", "LIGHT RED" }, { "tabl", "WHITE" }, { "bush", "LIGHT CYAN" }, { "phantwall", "LIGHT RED" }, { "wall", "LIGHT BLUE" }, { "torch", "YELLOW" } };
+    map<string, int> ids{ {"plate", 0},       {"token", 1},     {"fruit", 2},     {"tabl", 3},     {"bush", 4},     {"phantwall", 5},     {"wall", 6},     {"torch", 7}, {"mycelium", 8}, {"mushroom", 9} };
+    map<string, char> icons{ {"plate", ' '}, { "token", 249 }, { "fruit", 15 }, { "tabl", 4 }, { "bush", 177 }, { "phantwall", 254 }, { "wall", 254 }, { "torch", 5 }, { "mycelium", ' ' }, { "mushroom", 15} };
+    map<string, string> colors{ {"plate", "BLACK"}, { "token", "LIGHT YELLOW" }, { "fruit", "LIGHT RED" }, { "tabl", "WHITE" }, { "bush", "LIGHT CYAN" }, { "phantwall", "LIGHT RED" }, { "wall", "LIGHT BLUE" }, { "torch", "YELLOW" }, { "mycelium", "LIGHT MAGENTA" }, { "mushroom", "LIGHT YELLOW" } };
+    map<string, string> back_colors{ {"plate", "BLACK"}, { "token", "BLACK" }, { "fruit", "BLACK" }, { "tabl", "BLACK" }, { "bush", "BLACK" }, { "phantwall", "LIGHT RED" }, { "wall", "LIGHT BLUE" }, { "torch", "BLACK" }, { "mycelium", "LIGHT MAGENTA"}, {"mushroom", "LIGHT MAGENTA"} };
 
-    map<string, bool> viruses{ {"plate", false}, { "token", true }, { "fruit", false }, { "tabl", false }, { "bush", true }, { "phantwall", false }, { "wall", false }, { "torch", false } };
-    map<string, int> virus_chances{ {"plate", 0}, { "token", 10 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 50 }, { "phantwall", 0 }, { "wall", 0 }, { "torch", 0 } };
+    map<string, bool> viruses{ {"plate", false}, { "token", true }, { "fruit", false }, { "tabl", false }, { "bush", true }, { "phantwall", false }, { "wall", false }, { "torch", false }, { "mycelium", true }, { "mushroom", false } };
+    map<string, int> virus_chances{ {"plate", 0}, { "token", 10 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 20 }, { "phantwall", 0 }, { "wall", 0 }, { "torch", 0 }, { "mycelium", 20 }, { "mushroom", 0 } };
 
-    map<string, bool> collectables{ {"plate", false}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", false }, { "phantwall", false }, { "wall", false }, { "torch", false } };
-    map<string, int> costs{ {"plate", 0}, { "token", 1 }, { "fruit", 20 }, { "tabl", 0 }, { "bush", 0 }, { "phantwall", 0 }, { "wall", 0 }, { "torch", 0 } };
+    map<string, bool> collectables{ {"plate", false}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", false }, { "phantwall", false }, { "wall", false }, { "torch", false }, { "mycelium", false }, { "mushroom", true } };
+    map<string, int> costs{ {"plate", 0}, { "token", 1 }, { "fruit", 20 }, { "tabl", 0 }, { "bush", 0 }, { "phantwall", 0 }, { "wall", 0 }, { "torch", 0 }, { "mycelium", 0 }, { "mushroom", 0 } };
 
-    map<string, bool> light_sources{ {"plate", false}, { "token", false }, { "fruit", false }, { "tabl", false }, { "bush", false }, { "phantwall", false }, { "wall", false }, { "torch", true } };
-    map<string, int> light_powers{ {"plate", 0}, { "token", 0 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 0 }, { "phantwall", 0 }, { "wall", 0 }, { "torch", 5 } };
+    map<string, bool> light_sources{ {"plate", false}, { "token", false }, { "fruit", false }, { "tabl", false }, { "bush", false }, { "phantwall", false }, { "wall", false }, { "torch", true }, { "mycelium", false }, { "mushroom", true } };
+    map<string, int> light_powers{ {"plate", 0}, { "token", 0 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 0 }, { "phantwall", 0 }, { "wall", 0 }, { "torch", 5 }, { "mycelium", 0 }, { "mushroom", 1 } };
 
-    map<string, int> walls{ {"plate", 0}, { "token", 0 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 3 }, { "phantwall", 1 }, { "wall", 2 }, { "torch", 0 } };
-    map<string, bool> pl_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", false }, { "wall", false }, { "torch", false } };
-    map<string, bool> cr_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", true }, { "wall", false }, { "torch", false } };
-    map<string, bool> ph_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", true }, { "wall", true }, { "torch", false } };
+    map<string, int> types{ {"plate", Floor}, { "token", Item }, { "fruit", Item }, { "tabl", Item }, { "bush", Wall }, { "phantwall", Wall }, { "wall", Wall }, { "torch", Wall }, { "mycelium", Floor }, { "mushroom", Item } };
+    map<string, int> layers{ {"plate", 0}, { "token", 0 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 3 }, { "phantwall", 1 }, { "wall", 2 }, { "torch", 0 }, { "mycelium", 0 }, { "mushroom", 0 } };
+    
+    map<string, bool> pl_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", false }, { "wall", false }, { "torch", false }, { "mycelium", true }, { "mushroom", true } };
+    map<string, bool> cr_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", true }, { "wall", false }, { "torch", false }, { "mycelium", true }, { "mushroom", true } };
+    map<string, bool> ph_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", false }, { "bush", true }, { "phantwall", true }, { "wall", true }, { "torch", false }, { "mycelium", true }, { "mushroom", true } };
+    map<string, bool> mo_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", true }, { "wall", false }, { "torch", false }, { "mycelium", true }, { "mushroom", true } };
 };
 
 class Entity {
@@ -110,6 +125,7 @@ public:
     string color = "YELLOW";
     string back_color = "BLACK";
 
+    int move_dir = -1;
     int speed = 0;
 
     bool active = true;
@@ -121,9 +137,12 @@ public:
 
     Object point;
     map<char, int> target;
+
+    vector<vector<int>> points;
+    int points_pos = 0;
 };
 
-Object plate, token, fruit, tabl, bush, phantwall, wall, torch;
+Object plate, token, fruit, tabl, bush, phantwall, wall, torch, mycelium, mushroom;
 Entity uplate, player, crims, phantom, moss;
 
 #pragma endregion
@@ -185,12 +204,16 @@ void BaseGameLifeInit() {
 void BaseObjectsInit() {
     plate.Init("plate");
     token.Init("token");
+    token.virusable = {"plate", "mycelium"};
     fruit.Init("fruit");
     tabl.Init("tabl");
     bush.Init("bush");
+    bush.virusable = { "plate", "token", "mycelium" };
     phantwall.Init("phantwall");
     wall.Init("wall");
     torch.Init("torch");
+    mycelium.Init("mycelium");
+    mushroom.Init("mushroom");
 }
 
 void BaseEntityInit() {
@@ -230,6 +253,25 @@ void ReplaceObj(int y, int x, Object obj);
 void SpaceOut(int y, int x, bool pause = false);
 void SpaceOneObj(int y, int x, bool pause = false);
 
+
+struct Timers {
+public:
+    int fun = Game.speed;
+    int panic = Game.speed * 10;
+    int infection = Game.speed * 5;
+    int life = GameLife.speed;
+
+    int crims;
+    int phantom;
+    int moss;
+    int player;
+    Timers(Entity player, Entity crims, Entity phantom, Entity moss) {
+        this->crims = crims.speed * 5;
+        this->phantom = phantom.speed * 10;
+        this->moss = moss.speed * 15;
+        this->player = player.speed;
+    }
+}; Timers Timer(player, crims, phantom, moss);
 
 struct Event {
 public:
@@ -281,16 +323,13 @@ public:
     }
 
     void ToPanic() {
-        if (mode != Panic)
-        {
-            mode = Panic;
-            crims.speed *= 1, 5;
-            phantom.speed /= 1, 5;
-            moss.speed *= 1, 5;
-            crims.color = "BLUE";
-            phantom.color = "BLUE";
-            moss.color = "BLUE";
-        }
+        ToUnPanic();
+        Timer.panic = Game.speed * 10;
+
+        mode = Panic;
+        crims.speed *= 1, 5;
+        phantom.speed /= 1, 5;
+        moss.speed *= 1, 5;
     }
 
     void ToUnPanic() {
@@ -300,9 +339,6 @@ public:
             crims.speed /= 1, 5;
             phantom.speed *= 1, 5;
             moss.speed /= 1, 5;
-            crims.color = "RED";
-            phantom.color = "MAGENTA";
-            moss.color = "GREEN";
         }
     }
 
@@ -321,6 +357,10 @@ public:
                     }
                 }
             }
+            crims.color = "LIGHT RED";
+            phantom.color = "CYAN";
+            moss.color = "MAGENTA";
+
             BakeLight();
             FieldOut();
         }
@@ -330,6 +370,10 @@ public:
         if (night)
         {
             night = false;
+            crims.color = "RED";
+            phantom.color = "MAGENTA";
+            moss.color = "GREEN";
+
             BakeLight();
             FieldOut();
         }

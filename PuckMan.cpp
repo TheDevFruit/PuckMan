@@ -44,16 +44,16 @@ vector<vector<int>> sandbox_map = {
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -107,6 +107,9 @@ void Field_Comporator(vector<vector<int>> chosen_map, map<string, map<char, int>
     moss.pos.x = chosen_pos["moss.pos"]['x'];
     moss.pos.y = chosen_pos["moss.pos"]['y'];
 
+    phantom.points = { {1, 1}, { Game.y-1, 1 }, { Game.y-1, Game.x-1 }, { 1, Game.x-1 } };
+    moss.points = { {1, 1}, {1, Game.x-1}, {Game.y-1, Game.x-1}, {Game.y-1, 1} };
+
     crims.start_pos = crims.pos;
     moss.start_pos = moss.pos;
     moss.start_pos = moss.pos;
@@ -151,40 +154,33 @@ void Game_Lose() {
 void Game_Play() {
     Game.timer = 0;
     bool funny = false;
-    int fun_timer = Game.speed;
-    double screen_timer = 0.1;
-    int panic_timer = Game.speed * 10;
-    int infection_timer = Game.speed * 5;
-    int life_timer = GameLife.speed;
-
-    int crims_timer = crims.speed * 10;
-    int phantom_timer = phantom.speed * 10;
-    int moss_timer = moss.speed * 10;
-    int player_timer = player.speed;
 
     while (true) {
         if (!GameLife.active) {
             if (!Event.pause and !Event.freeze and player.active)
             {
-                if (crims_timer <= 0 and crims.active)
+                if (Timer.crims <= 0 and crims.active)
                 {
                     crims_move.Move();
-                    crims_timer = crims.speed;
+                    Timer.crims = crims.speed;
+                    if (crims.point.id == mycelium.id) Timer.crims -= (crims.speed / 5);
                 }
-                if (phantom_timer <= 0 and phantom.active)
+                if (Timer.phantom <= 0 and phantom.active)
                 {
                     phantom_move.Move();
-                    phantom_timer = phantom.speed;
+                    Timer.phantom = phantom.speed;
+                    if (phantom.point.id == mycelium.id) Timer.phantom -= (phantom.speed / 5);
                 }
-                if (moss_timer <= 0 and moss.active)
+                if (Timer.moss <= 0 and moss.active)
                 {
                     moss_move.Move();
-                    moss_timer = moss.speed;
+                    Timer.moss = moss.speed;
+                    if (moss.point.id == mycelium.id) Timer.moss -= (moss.speed / 5);
                 }
-                if (infection_timer <= 0)
+                if (Timer.infection <= 0)
                 {
                     Infection();
-                    infection_timer = Game.speed * 5;
+                    Timer.infection = Game.speed * 5;
                 }
             }
 
@@ -197,52 +193,61 @@ void Game_Play() {
                 break;
             }
             else if (Game.objects.first[token.id].collected == 50 and Event.fruits_spawned == ZeroWave)  Event.ToSpawnFruit();
-            else if (panic_timer <= 0) {
+            else if (Timer.panic <= 0) {
                 Event.ToUnPanic();
-                panic_timer = Game.speed * 10;
+                Timer.panic = Game.speed * 10;
             }
-            else if (fun_timer <= 0 and !player.active) {
+            else if (Timer.fun <= 0 and !player.active) {
                 funny = Event.ToUnPlayer(funny);
-                fun_timer = Game.speed;
+                Timer.fun = Game.speed;
             }
         }
 
-        if (GameLife.active and life_timer == 0) {
+        if (GameLife.active and Timer.life == 0) {
                 SimulateLife();
-                life_timer = GameLife.speed;
+                Timer.life = GameLife.speed;
             }
 
 
-        if (_kbhit() and player_timer <= 0) {
+        if (_kbhit() and Timer.player <= 0) {
                 player_move.Move(_getch());
-                player_timer = player.speed;
+                Timer.player = player.speed;
             }
+        else if (!Event.night and Timer.player <= -(player.speed/2) and player.move_dir != -1)
+        {
+            if (player.move_dir == Up) player_move.Move('w');
+            else if (player.move_dir == Left) player_move.Move('a');
+            else if (player.move_dir == Down) player_move.Move('s');
+            else if (player.move_dir == Right) player_move.Move('d');
+
+            Timer.player = player.speed;
+        }
 
 
 
         if (!Event.pause and !GameLife.active) {
-                if (Event.mode == Panic) panic_timer--;
+                if (Event.mode == Panic) Timer.panic--;
                 Game.timer++;
                 Game.tick = (2 / (Game.timer)) * 10000000;
-                crims_timer--;
-                phantom_timer--;
-                moss_timer--;
-                fun_timer--;
-                infection_timer--;
+                Timer.crims--;
+                Timer.phantom--;
+                Timer.moss--;
+                if (!player.active) Timer.fun--;
+                Timer.infection--;
                 if (Game.timer >= 1000000)
                 {
                     Game.timer -= Round(Game.timer - (Game.timer / 2));
                 }
             }
-        if (!Event.pause and GameLife.active) life_timer--;
-        player_timer--;
+        if (!Event.pause and GameLife.active) Timer.life--;
+        Timer.player--;
     }
 }
 
 
 
 void GameInit() {
-    Game.objects = { {plate, token, fruit, tabl, bush, phantwall, wall, torch}, { player, crims, phantom, moss } };
+    Game.objects = { {plate, token, fruit, tabl, bush, phantwall, wall, torch, mycelium, mushroom}, { player, crims, phantom, moss } };
     CommandGenerate();
     Sounds.GameStart();
     Field_Comporator(classic_map, classic_pos);
@@ -257,7 +262,6 @@ void WorldInit() {
     map_coding = { {0, plate}, {1, token}, {2, wall}, {3, phantwall}, {4, torch}, {5, tabl}, {6, bush} };
     BaseEntityInit();
     BaseGameLifeInit();
-    CommandGenerate();
 }
 
 void main() {
