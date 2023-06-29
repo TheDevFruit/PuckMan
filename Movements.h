@@ -47,7 +47,7 @@ void UpdateFieldObject(Object obj) {
         for (int j = 0; j < Game.x + 1; j++)
         {
             if (obj.id == Game.field[i][j].id)
-            {   
+            {
                 obj.lighted = Game.field[i][j].lighted;
                 Game.field[i][j] = obj;
             }
@@ -72,10 +72,10 @@ void SetFieldPos(int y, int x) {
 
 vector<Pos> Crosspiece(int y, int x) {
     return {
-        Posit({y-1, x}),
-        Posit({y, x-1}),
-        Posit({y+1, x}),
-        Posit({y, x+1})
+        Posit({y - 1, x}),
+        Posit({y, x - 1}),
+        Posit({y + 1, x}),
+        Posit({y, x + 1})
     };
 }
 
@@ -95,7 +95,7 @@ void OFE(Object obj, vector<int> vec, bool paint) { // y, x
 // Entity Fore Edit
 void EFE(Entity obj, Pos pos) {
     SetFieldPos(pos.y, pos.x);
-    if (Event.mode == Panic and obj.id != player.id){
+    if (Event.mode == Panic and obj.id != player.id) {
         ForePrint(obj.icon, "BLUE", obj.point.back_color);
         return;
     }
@@ -111,23 +111,25 @@ void Field_GameActive() {
     else if (Event.pause) text = "Game Paused";
     else if (!player.active) text = "Heh, and where";
 
-    Modals.game_active_pos.x = Modals.field_pos.x + Game.x - (size(text) / 2);
+    Modals.game_active_pos.x = (Modals.field_pos.x + Game.x * 2) / 2 - (size(text) / 2) + 3;
     modal.CreateModal(text, 1, 1, false, "LIGHT RED");
 
-    SetConsoleCursorPosition(hand, { short(0), short(Modals.game_active_pos.y) });
+    SetPos(Modals.game_active_pos.y, 0);
     for (int i = 0; i < Modals.field_pos.x + Game.x * 2; i++) cerr << ' ';
 
     modal.OutContent(Modals.game_active_pos);
 
 
-    SetConsoleCursorPosition(hand, { short(Modals.field_pos.x + 2), short(Modals.field_pos.y - 2) });
+    SetPos(Modals.game_active_pos.y + 2, (Modals.field_pos.x + Game.x * 2 + 4) / 2);
+    string a = "";
+    for (int i = 0; i < Game.player_lives; i++) a += player.icon;
+    ForePrint(a, "LIGHT YELLOW");
+
+    SetPos(Modals.game_active_pos.y + 2, Modals.field_pos.x + 2);
     ForePrint("Score: " + Str(Round(Game.score)), "LIGHT YELLOW");
 
-
-    text = "";
-    for (auto& i : Range(0, fruit.collected)) text += fruit.icon + " ";
-    SetConsoleCursorPosition(hand, { short(Game.x - 2), short(Modals.game_active_pos.y - 2) });
-    ForePrint(text, fruit.color);
+    SetPos(Modals.game_active_pos.y + 2, Modals.field_pos.x + Game.x * 2 - 8);
+    ForePrint("Fruits: " + Str(Game.objects.first[fruit.id].collected), fruit.color, fruit.back_color);
 }
 
 void Field_Show_Pos() {
@@ -139,7 +141,12 @@ void Field_Show_Pos() {
         modal.SetFrameColor("LIGHT RED");
         modal.In(point + " Player Pos: " + Str(player.pos.x) + " | " + Str(player.pos.y) + "\n");
         modal.In(point + " Crims Pos: " + Str(crims.pos.x) + " | " + Str(crims.pos.y) + "\n");
-        modal.In(point + " Phantom Pos: " + Str(phantom.pos.x) + " | " + Str(phantom.pos.y) + "\n");
+        string text = point + " Phantom Pos: " + Str(phantom.pos.x) + " | " + Str(phantom.pos.y) + "\n";
+        if (size(text) != size(point + " Phantom Pos: 11 | 11\n")) {
+            text[size(text) - 1] = ' ';
+            text += "\n";
+        }
+        modal.In(text);
         modal.In(point + " Moss Pos: " + Str(moss.pos.x) + " | " + Str(moss.pos.y) + "\n");
 
         modal.Out(Modals.show_pos_pos);
@@ -152,10 +159,10 @@ void Field_Show_Params() {
         Modal modal;
         string point = Str((char)249);
         modal.CreateModal("\nParametrs:   \n", 1, 1, false, "LIGHT RED");
+        modal.SetFrameColor("LIGHT RED");
         modal.In(point + " Mode: " + Str(Event.mode) + "\n");
         modal.In(point + " Game Time: " + Str(Game.timer) + "\n");
         modal.In(point + " Tokens: " + Str(Game.objects.first[token.id].collected) + "\n");
-        modal.In(point + " Fruits: " + Str(Game.objects.first[fruit.id].collected) + "\n");
         modal.In(point + " Player Speed: " + Str(player.speed) + "\n");
         modal.In(point + " Crims Speed : " + Str(crims.speed) + "\n");
         modal.In(point + " Phantom Speed: " + Str(phantom.speed) + "\n");
@@ -185,7 +192,7 @@ void FieldOut(int pick_y, int pick_x) {
     for (int i = 0; i < Game.y + 1; i++) {
         SetConsoleCursorPosition(hand, { short(1 + Modals.field_pos.x), short(1 + Modals.field_pos.y + i) });
         for (int j = 0; j < Game.x + 1; j++) {
-            if (Event.pause and ((j == pick_x and pick_y == 1000) or (i == pick_y and pick_x == 1000) or (i == pick_y and j == pick_x))){
+            if (Event.pause and ((j == pick_x and pick_y == 1000) or (i == pick_y and pick_x == 1000) or (i == pick_y and j == pick_x))) {
                 ForePrint(Game.field[i][j].icon, Game.field[i][j].color, "LIGHT RED");
                 SpaceOut(i, j, pick_y != 1000);
             }
@@ -226,8 +233,8 @@ void Space(Object obj, bool pause) {
 void SpaceOut(int y, int x, bool pause) {
     if (x < Game.x) {
         Object obj = Game.field[y][x];
-        Object obj2 = Game.field[y][x+1];
-        
+        Object obj2 = Game.field[y][x + 1];
+
         if (obj2.type == obj.type)
         {
             if (obj.layer <= obj2.layer)
@@ -252,7 +259,7 @@ void SpaceOut(int y, int x, bool pause) {
 
 void SpaceOneObj(int y, int x, bool pause) {
     vector<int> vec = Occurate({ y, x });
-    SetConsoleCursorPosition(hand, { short(vec[X]-1), short(vec[Y]) });
+    SetConsoleCursorPosition(hand, { short(vec[X] - 1), short(vec[Y]) });
 
     SpaceOut(y, NormLine(x - 1, 'x'), pause);
 
@@ -274,21 +281,22 @@ bool InVec(any a, vector<any> vec) {
 
 void Infection() {
     for (int i = 1; i < Game.y; i++) for (int j = 1; j < Game.x; j++)
-        {   if (Game.field[i][j].virus) {
-                Pos cell = Crosspiece(i, j)[rand() % 4];
-                Object virus = Game.field[i][j];
+    {
+        if (Game.field[i][j].virus) {
+            Pos cell = Crosspiece(i, j)[rand() % 4];
+            Object virus = Game.field[i][j];
 
-                if (rand() % 100 <= virus.virus_chance) {
-                    if (InVec(Game.field[cell.y][cell.x].name, virus.virusable)) {
-                        if (Game.movfield[cell.y][cell.x].id == uplate.id and (Game.field[cell.y][cell.x].lighted or !Event.night)) 
-                            OFE(virus, { cell.y, cell.x });
-                        ReplaceObj(cell.y, cell.x, virus);
-                        if (Game.field[cell.y][cell.x].lighted or !Event.night) 
-                            SpaceOneObj(cell.y, j);
-                    }
+            if (rand() % 100 <= virus.virus_chance) {
+                if (InVec(Game.field[cell.y][cell.x].name, virus.virusable)) {
+                    if (Game.movfield[cell.y][cell.x].id == uplate.id and (Game.field[cell.y][cell.x].lighted or !Event.night))
+                        OFE(virus, { cell.y, cell.x });
+                    ReplaceObj(cell.y, cell.x, virus);
+                    if (Game.field[cell.y][cell.x].lighted or !Event.night)
+                        SpaceOneObj(cell.y, cell.x);
                 }
             }
         }
+    }
 }
 
 void BakeLight() {
@@ -328,21 +336,21 @@ vector<vector<int>> LifeMapInit(int y, int x) {
 
 int AmountOfNeighbours(int y, int x) {
     int amount = 0;
-    for (int i = y-1; i <= y+1; i++) for (int j = x-1; j <= x+1; j++) {
-                if (i >= 0 and i <= Game.y and j >= 0 and j <= Game.x and !(i == y and j == x))
-                {
-                    if (Game.field[i][j].id == GameLife.one_obj.id) amount++;
-                }
-            }
+    for (int i = y - 1; i <= y + 1; i++) for (int j = x - 1; j <= x + 1; j++) {
+        if (i >= 0 and i <= Game.y and j >= 0 and j <= Game.x and !(i == y and j == x))
+        {
+            if (Game.field[i][j].id == GameLife.one_obj.id) amount++;
+        }
+    }
     return amount;
 }
 
 void SimulateLife() {
     vector<vector<Object>> new_field;
 
-    for (int i = 0; i < Game.y+1; i++) {
+    for (int i = 0; i < Game.y + 1; i++) {
         vector<Object> temp;
-        for (int j = 0; j < Game.x+1; j++) {
+        for (int j = 0; j < Game.x + 1; j++) {
             int amount = AmountOfNeighbours(i, j);
 
             if (InVec(amount, GameLife.birth_rule)) {
@@ -460,7 +468,7 @@ public:
     void CursoreMove(Pos point_pos, Object point) {
         if (crims.point.lighted or !Event.night)
         {
-            OFE(crims.point, {crims.pos.y, crims.pos.x});
+            OFE(crims.point, { crims.pos.y, crims.pos.x });
         }
         crims.point = point;
         if (point.lighted or !Event.night) EFE(crims, point_pos);
@@ -518,7 +526,7 @@ public:
             }
             phantom.target = { {'y', phantom.points[min_num][0]}, {'x', phantom.points[min_num][1]} };
 
-            if (Mod(player.pos.y - phantom.pos.y) + Mod(player.pos.x - phantom.pos.x) <= 10) {   
+            if (Mod(player.pos.y - phantom.pos.y) + Mod(player.pos.x - phantom.pos.x) <= 10) {
                 min_num += 1;
                 min_num = Loop(min_num, { 0, 3 });
                 phantom.target = { {'y', phantom.points[min_num][0]}, {'x', phantom.points[min_num][1]} };
@@ -645,46 +653,46 @@ public:
         }
         else if (Event.mode == Pursuit)
         {
-            pursuit_moss:
+        pursuit_moss:
             if (moss.pos.y == moss.target['y'] and moss.pos.x == moss.target['x'])
             {
                 moss.points_pos += 1;
                 moss.points_pos = Loop(moss.points_pos, { 0,3 });
             }
-            moss.target = { {'y', moss.points[moss.points_pos][0]}, {'x', moss.points[moss.points_pos][1]}};
+            moss.target = { {'y', moss.points[moss.points_pos][0]}, {'x', moss.points[moss.points_pos][1]} };
         }
         else if (Event.mode == Scatter)
         {
-            moss.target = { {'y', 1}, {'x', Game.x-1} };
+            moss.target = { {'y', 1}, {'x', Game.x - 1} };
         }
         else if (Event.mode == Panic)
         {
             pair<int, vector<int>> max = { 1000, {} };
             for (int i = 0; i < Game.y + 1; i++) for (int j = 0; j < Game.x + 1; j++) {
-                    if (Game.field[i][j].id == bush.id) {
-                        int len = Mod(moss.pos.y - i) + Mod(moss.pos.x - j);
-                        if (len <= max.first)
-                        {
-                            max.second = { i, j };
-                            max.first = len;
-                        }
+                if (Game.field[i][j].id == bush.id) {
+                    int len = Mod(moss.pos.y - i) + Mod(moss.pos.x - j);
+                    if (len <= max.first)
+                    {
+                        max.second = { i, j };
+                        max.first = len;
                     }
                 }
+            }
 
             if (max.first != 1000) {
                 moss.target = { {'y', max.second[0]}, {'x', max.second[1]} };
             }
-            else 
+            else
             {
                 Go(rand() % 4);
                 return;
             }
         }
 
-        
+
         if (moss.pos.y == moss.target['y'] and moss.pos.x == moss.target['x']) CursoreMove(moss.pos, moss.point);
 
-        else if (moss.target['y'] < moss.pos.y 
+        else if (moss.target['y'] < moss.pos.y
             and (Game.field[moss.pos.y - 1][moss.pos.x].mo_avalb or moss.die)
             and (moss.pos.y - 1 != moss.last_point.y and moss.pos.x != moss.last_point.x))
             Go(Up);
@@ -815,7 +823,12 @@ public:
     }
 
     void CursoreMove(Pos point_pos, Object point) {
-        if (player.point.collectable or (!player.point.lighted and Event.night))
+        if (!player.point.lighted and Event.night)
+        {
+            SetFieldPos(player.pos.y, player.pos.x);
+            cerr << ' ';
+        }
+        else if (player.point.collectable)
         {
             OFE(plate, { player.pos.y, player.pos.x });
         }
@@ -850,9 +863,9 @@ private:
         Object* point = &Game.field[point_pos.y][point_pos.x];
 
         if ((*point).pl_avalb) {
+            if (player.point.collectable) ReplaceObj(player.pos.y, player.pos.x, plate);
             CursoreMove(point_pos, *point);
             Game.movfield[player.pos.y][player.pos.x] = uplate;
-            if (player.point.collectable) ReplaceObj(player.pos.y, player.pos.x, plate);
 
             player.pos = point_pos;
             Game.movfield[player.pos.y][player.pos.x] = player;
@@ -903,8 +916,10 @@ void CommandGenerate() {
         {
             commands.push_back("mod_create_edit_params_" + i.name + "=" + "(icon, name, color, back_color)");
             commands.push_back("mod_create_edit_light_" + i.name + "=" + "(lighting, light_power)");
-            commands.push_back("mod_create_edit_avalb_" + i.name + "=" + "(iswall, pl_avalb, cr_avalb, ph_avalb)");
+            commands.push_back("mod_create_edit_light_" + i.name + "=" + "(lighting, light_power)");
+            commands.push_back("mod_create_edit_avalb_" + i.name + "=" + "(pl_avalb, cr_avalb, ph_avalb, mo_avalb)");
             commands.push_back("mod_create_edit_virus_" + i.name + "=" + "(virus, virus_chance)");
+            commands.push_back("mod_create_edit_virus_avalb_" + i.name + "=" + "(objects names)");
             commands.push_back("mod_create_edit_cost_" + i.name + "=" + "(collectable, cost)");
         }
     }
@@ -929,7 +944,7 @@ void CommandTab(string command) {
         {
             vector<string> params = Split(vec[size(vec) - 1], ",");
             if (vec[2] == "x") { params.push_back("1000"); }
-            if (vec[2] == "y") { 
+            if (vec[2] == "y") {
                 params.push_back(params[0]);
                 params[0] = "1000";
             }
@@ -985,7 +1000,7 @@ void CommandTab(string command) {
                 player_move.CursoreMove(Posit(point_pos), point);
                 Game.movfield[player.pos.y][player.pos.x] = uplate;
                 if (player.point.collectable) ReplaceObj(player.pos.y, player.pos.x, plate);
-                
+
                 player.pos.y = Int(params[0]);
                 player.pos.x = Int(params[1]);
                 Game.movfield[player.pos.y][player.pos.x] = player;
@@ -1158,11 +1173,44 @@ void CommandTab(string command) {
             if (vec[1] == "pos")
             {
                 Setups.show_pos = param;
+                if (!param)
+                {
+                    Modal modal;
+                    string point = Str((char)249);
+                    modal.CreateModal("\nPosition (x | y):\n", 1, 1, false, "BLACK");
+                    modal.SetFrameColor("BLACK");
+                    modal.In(point + " Player Pos: " + Str(player.pos.x) + " | " + Str(player.pos.y) + "\n");
+                    modal.In(point + " Crims Pos: " + Str(crims.pos.x) + " | " + Str(crims.pos.y) + "\n");
+                    string text = point + " Phantom Pos: " + Str(phantom.pos.x) + " | " + Str(phantom.pos.y) + "\n";
+                    if (size(text) != size("   Phantom Pos: 11 | 11\n")) {
+                        text[size(text) - 1] = ' ';
+                        text += "\n";
+                    }
+                    modal.In(text);
+                    modal.In(point + " Moss Pos: " + Str(moss.pos.x) + " | " + Str(moss.pos.y) + "\n");
+
+                    modal.Out(Modals.show_pos_pos);
+                }
                 Field_Show_Pos();
             }
             else if (vec[1] == "params")
             {
                 Setups.show_params = param;
+                if (!param)
+                {
+                    Modal modal;
+                    string point = Str((char)249);
+                    modal.CreateModal("\nParametrs:   \n", 1, 1, false, "BLACK");
+                    modal.SetFrameColor("BLACK");
+                    modal.In(point + " Mode: " + Str(Event.mode) + "\n");
+                    modal.In(point + " Game Time: " + Str(Game.timer) + "\n");
+                    modal.In(point + " Tokens: " + Str(Game.objects.first[token.id].collected) + "\n");
+                    modal.In(point + " Player Speed: " + Str(player.speed) + "\n");
+                    modal.In(point + " Crims Speed : " + Str(crims.speed) + "\n");
+                    modal.In(point + " Phantom Speed: " + Str(phantom.speed) + "\n");
+
+                    modal.Out(Modals.show_params_pos);
+                }
                 Field_Show_Params();
             }
         }
@@ -1216,13 +1264,17 @@ void CommandTab(string command) {
                     {
                         vector<string> params = Split(vec[size(vec) - 1], ",");
 
-                        block.pl_avalb = Bool(params[1]);
-                        block.cr_avalb = Bool(params[2]);
-                        block.ph_avalb = Bool(params[3]);
+                        block.pl_avalb = Bool(params[0]);
+                        block.cr_avalb = Bool(params[1]);
+                        block.ph_avalb = Bool(params[2]);
+                        block.mo_avalb = Bool(params[3]);
+                    }
+                    else if (vec[3] == "virus" and vec[4] == "avalb") {
+                        block = ObjFindName(vec[5]);
+                        block.virusable = Split(vec[size(vec) - 1], ",");
                     }
                     else if (vec[3] == "virus") {
                         vector<string> params = Split(vec[size(vec) - 1], ",");
-                        map<string, int> rules{ {"None", 0}, { "UnderId", 1 }, { "UpperId", 2 }, { "All", 3 }, };
 
                         block.virus = Bool(params[0]);
                         block.virus_chance = Int(params[1]);
@@ -1258,14 +1310,14 @@ void CommandTab(string command) {
                 if (Mods.gamelife)
                 {
                     if (vec[2] == "active") GameLife.active = Bool(vec[size(vec) - 1]);
-                    else if(vec[2] == "speed") GameLife.speed = Int(vec[size(vec) - 1]);
+                    else if (vec[2] == "speed") GameLife.speed = Int(vec[size(vec) - 1]);
                     else if (vec[2] == "zero" and vec[3] == "obj") GameLife.zero_obj = ObjFindName(vec[size(vec) - 1]);
                     else if (vec[2] == "one" and vec[3] == "obj") GameLife.one_obj = ObjFindName(vec[size(vec) - 1]);
 
                     else if (vec[2] == "birth" and vec[3] == "rule")
                     {
                         GameLife.birth_rule = {};
-                        for (auto& i : vec[size(vec) - 1]) { 
+                        for (auto& i : vec[size(vec) - 1]) {
                             string a = ""; a += i;
                             GameLife.birth_rule.push_back(Int(a));
                         }
@@ -1298,11 +1350,11 @@ void CommandInput() {
     {
         if (_kbhit())
         {
-            SetConsoleCursorPosition(hand, { short(Modals.field_pos.x + size("Enter Command: ")), short(Modals.field_pos.y + Game.y + 3)});
+            SetConsoleCursorPosition(hand, { short(Modals.field_pos.x + size("Enter Command: ")), short(Modals.field_pos.y + Game.y + 3) });
             char button = _getch();
-            int but_num = button;   
+            int but_num = button;
             if (but_num == 13)
-            { 
+            {
                 if (command.find('=') <= 100)
                 {
                     break;
@@ -1333,7 +1385,7 @@ void CommandInput() {
 
             SetConsoleCursorPosition(hand, { short(Modals.field_pos.x + size("Enter Command: ") + size(command)), short(Modals.field_pos.y + Game.y + 3) });
             vector<string> mmaybe = Find(commands, command);
-            if (size(mmaybe) != 0) 
+            if (size(mmaybe) != 0)
             {
                 Fore("GRAY");
                 maybe = mmaybe;

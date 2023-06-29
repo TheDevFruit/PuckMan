@@ -25,11 +25,11 @@ void Fore(string color = "BLACK", string background = "BLACK");
 map<string, int> colors = {
 	{"BLACK", 0}, {"BLUE", 1}, {"GREEN", 2}, {"CYAN", 3}, {"RED", 4}, {"MAGENTA", 5}, {"YELLOW", 6}, {"WHITE", 7},
 	{"GRAY", 8}, {"LIGHT BLUE", 9}, {"LIGHT GREEN", 10}, {"LIGHT CYAN", 11}, {"LIGHT RED", 12}, {"LIGHT MAGENTA", 13}, {"LIGHT YELLOW", 14}, {"LIGHT WHITE", 15} };
-vector<string> reversed_colors = { 
+vector<string> reversed_colors = {
 "BLACK", "BLUE", "GREEN", "CYAN", "RED", "MAGENTA", "YELLOW", "WHITE",
 "GRAY", "LIGHT BLUE", "LIGHT GREEN", "LIGHT CYAN", "LIGHT RED", "LIGHT MAGENTA", "LIGHT YELLOW", "LIGHT WHITE" };
 int base_color = 0;
-pair<string, string> bcolors {"LIGHT RED", "BLACK"};
+pair<string, string> bcolors{ "LIGHT RED", "BLACK" };
 
 vector<string> Split(string text, string dived);
 bool isnumeric(string in);

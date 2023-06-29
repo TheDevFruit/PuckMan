@@ -4,6 +4,7 @@ void FieldOut(int pick_x = 1000, int pick_y = 1000);
 void FieldUpdate();
 void CommandInput();
 void BakeLight();
+void GameInit();
 void SetFieldPos(int y, int x);
 
 enum Dirs {
@@ -95,9 +96,9 @@ public:
     }
 private:
     map<string, int> ids{ {"plate", 0},       {"token", 1},     {"fruit", 2},     {"tabl", 3},     {"bush", 4},     {"phantwall", 5},     {"wall", 6},     {"torch", 7}, {"mycelium", 8}, {"mushroom", 9} };
-    map<string, char> icons{ {"plate", ' '}, { "token", 249 }, { "fruit", 15 }, { "tabl", 4 }, { "bush", 177 }, { "phantwall", 254 }, { "wall", 254 }, { "torch", 5 }, { "mycelium", ' ' }, { "mushroom", 15} };
+    map<string, char> icons{ {"plate", ' '}, { "token", 249 }, { "fruit", 15 }, { "tabl", 4 }, { "bush", 177 }, { "phantwall", 254 }, { "wall", 254 }, { "torch", 5 }, { "mycelium", ' ' }, { "mushroom", 15 } };
     map<string, string> colors{ {"plate", "BLACK"}, { "token", "LIGHT YELLOW" }, { "fruit", "LIGHT RED" }, { "tabl", "WHITE" }, { "bush", "LIGHT CYAN" }, { "phantwall", "LIGHT RED" }, { "wall", "LIGHT BLUE" }, { "torch", "YELLOW" }, { "mycelium", "LIGHT MAGENTA" }, { "mushroom", "LIGHT YELLOW" } };
-    map<string, string> back_colors{ {"plate", "BLACK"}, { "token", "BLACK" }, { "fruit", "BLACK" }, { "tabl", "BLACK" }, { "bush", "BLACK" }, { "phantwall", "LIGHT RED" }, { "wall", "LIGHT BLUE" }, { "torch", "BLACK" }, { "mycelium", "LIGHT MAGENTA"}, {"mushroom", "LIGHT MAGENTA"} };
+    map<string, string> back_colors{ {"plate", "BLACK"}, { "token", "BLACK" }, { "fruit", "BLACK" }, { "tabl", "BLACK" }, { "bush", "BLACK" }, { "phantwall", "LIGHT RED" }, { "wall", "LIGHT BLUE" }, { "torch", "BLACK" }, { "mycelium", "LIGHT MAGENTA" }, { "mushroom", "LIGHT MAGENTA" } };
 
     map<string, bool> viruses{ {"plate", false}, { "token", true }, { "fruit", false }, { "tabl", false }, { "bush", true }, { "phantwall", false }, { "wall", false }, { "torch", false }, { "mycelium", true }, { "mushroom", false } };
     map<string, int> virus_chances{ {"plate", 0}, { "token", 10 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 20 }, { "phantwall", 0 }, { "wall", 0 }, { "torch", 0 }, { "mycelium", 20 }, { "mushroom", 0 } };
@@ -110,7 +111,7 @@ private:
 
     map<string, int> types{ {"plate", Floor}, { "token", Item }, { "fruit", Item }, { "tabl", Item }, { "bush", Wall }, { "phantwall", Wall }, { "wall", Wall }, { "torch", Wall }, { "mycelium", Floor }, { "mushroom", Item } };
     map<string, int> layers{ {"plate", 0}, { "token", 0 }, { "fruit", 0 }, { "tabl", 0 }, { "bush", 3 }, { "phantwall", 1 }, { "wall", 2 }, { "torch", 0 }, { "mycelium", 0 }, { "mushroom", 0 } };
-    
+
     map<string, bool> pl_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", false }, { "wall", false }, { "torch", false }, { "mycelium", true }, { "mushroom", true } };
     map<string, bool> cr_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", true }, { "bush", true }, { "phantwall", true }, { "wall", false }, { "torch", false }, { "mycelium", true }, { "mushroom", true } };
     map<string, bool> ph_avalbs{ {"plate", true}, { "token", true }, { "fruit", true }, { "tabl", false }, { "bush", true }, { "phantwall", true }, { "wall", true }, { "torch", false }, { "mycelium", true }, { "mushroom", true } };
@@ -160,6 +161,7 @@ public:
 
     vector<vector<int>> fruit_pos;
 
+    int player_lives = 3;
     int speed = 30000;
     double timer = 0;
     double tick = 0;
@@ -188,11 +190,11 @@ public:
 struct GameLife {
 public:
     bool active = false;
-    int speed = (Game.speed/100)*100;
+    int speed = (Game.speed / 100) * 100;
     Object zero_obj;
     Object one_obj;
-    vector<int> birth_rule {3};
-    vector<int> life_rule {2,3};
+    vector<int> birth_rule{ 3 };
+    vector<int> life_rule{ 2, 3 };
 } GameLife;
 
 void BaseGameLifeInit() {
@@ -204,7 +206,7 @@ void BaseGameLifeInit() {
 void BaseObjectsInit() {
     plate.Init("plate");
     token.Init("token");
-    token.virusable = {"plate", "mycelium"};
+    token.virusable = { "plate", "mycelium" };
     fruit.Init("fruit");
     tabl.Init("tabl");
     bush.Init("bush");
@@ -271,7 +273,7 @@ public:
         this->moss = moss.speed * 15;
         this->player = player.speed;
     }
-}; Timers Timer(player, crims, phantom, moss);
+}; Timers Timer(uplate, uplate, uplate, uplate);
 
 struct Event {
 public:
