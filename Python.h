@@ -344,7 +344,7 @@ bool isnumeric(string in) {
 	{
 		char char_sym = Char(in);
 		int num = char_sym;
-		if ((47 < num && num < 58) or char_sym == '.')
+		if (47 < num && num < 58)
 		{
 			out = true;
 		}
@@ -355,7 +355,7 @@ bool isnumeric(string in) {
 		for (auto& i : in)
 		{
 			int num = i;
-			if ((47 < num && num < 58) or i == '.')
+			if (47 < num && num < 58)
 			{
 				count++;
 			}
